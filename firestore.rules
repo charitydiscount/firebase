@@ -1,7 +1,27 @@
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /favoriteShops/{userId} {
+    	allow read, write: if belongsTo(userId);
+      allow create: if isSignedIn();
+    }
+    match /settings/{userId} {
+    	allow read, write: if belongsTo(userId);
+      allow create: if isSignedIn();
+    }
+    match /users/{userId} {
+    	allow read, write: if belongsTo(userId);
+      allow create: if isSignedIn();
+    }
     match /{document=**} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update, delete: if false;
     }
   }
+}
+
+function belongsTo(userId) {
+  return request.auth.uid == userId
+}
+function isSignedIn() {
+  return request.auth.uid != null;
 }

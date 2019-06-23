@@ -19,6 +19,10 @@ service cloud.firestore {
     	allow read, write: if belongsTo(userId);
       allow create: if isSignedIn();
     }
+    match /points/{userId} {
+    	allow read: if belongsTo(userId);
+      allow write: if false;
+    }
   }
 }
 

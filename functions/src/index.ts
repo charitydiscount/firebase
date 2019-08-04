@@ -1,8 +1,23 @@
-// import * as functions from 'firebase-functions';
+import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
-// export const helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
+admin.initializeApp();
+
+export const createWalletDocument = functions.auth
+  .user()
+  .onCreate(async (user: functions.auth.UserRecord) => {
+    await admin
+      .firestore()
+      .collection('points')
+      .doc(user.uid)
+      .create({
+        cashback: {
+          approved: 0.0,
+          pending: 0.0
+        },
+        points: {
+          approved: 0.0,
+          pending: 0.0
+        }
+      });
+  });

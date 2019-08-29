@@ -23,7 +23,7 @@ service cloud.firestore {
     	allow read: if belongsTo(userId);
       allow write: if false;
     }
-    match /transactions/{tx} {
+    match /requests/{request} {
     	allow read, write: if false;
       allow create: if isSignedIn();
     }

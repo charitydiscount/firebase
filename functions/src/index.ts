@@ -15,17 +15,17 @@ export const createWalletDocument = functions.auth
       .create({
         cashback: {
           approved: 0.0,
-          pending: 0.0
+          pending: 0.0,
         },
         points: {
           approved: 0.0,
-          pending: 0.0
-        }
+          pending: 0.0,
+        },
       });
   });
 
 export const processTransaction = functions.firestore
-  .document('transactions/{transactionId}')
+  .document('requests/{requestId}')
   .onCreate(async (snap, context) => {
     const tx = snap.data();
     if (!tx) {
@@ -42,13 +42,14 @@ export const processTransaction = functions.firestore
         currency: tx.currency,
         userId: tx.userId,
         createdAt: tx.createdAt,
-        target: tx.target
+        target: tx.target,
       },
-      snap.ref);
+      snap.ref
+    );
 
     if (txResult.status === TxStatus.ACCEPTED) {
-      console.log(`Transaction ${snap.id} processed successfully.`);
+      console.log(`Request ${snap.id} processed successfully.`);
     } else {
-      console.log(`Transaction ${snap.id} rejected.`);
+      console.log(`Request ${snap.id} rejected.`);
     }
   });

@@ -1,20 +1,28 @@
 import * as TxDefinitions from './types';
-import { DocumentReference, Timestamp, FieldValue } from '@google-cloud/firestore';
+import {
+  DocumentReference,
+  Timestamp,
+  FieldValue,
+} from '@google-cloud/firestore';
 
 export default class DonationHandler implements TxDefinitions.TxHandler {
   private bonusPercentage: number;
   private walletRef: DocumentReference;
   private txRef: DocumentReference;
 
-  constructor(walletRef: DocumentReference,
+  constructor(
+    walletRef: DocumentReference,
     bonusPercentage: number,
-    txRef: DocumentReference) {
+    txRef: DocumentReference
+  ) {
     this.bonusPercentage = bonusPercentage;
     this.walletRef = walletRef;
     this.txRef = txRef;
   }
 
-  async process(tx: TxDefinitions.Transaction): Promise<TxDefinitions.ProcessResult> {
+  async process(
+    tx: TxDefinitions.TxRequest
+  ): Promise<TxDefinitions.ProcessResult> {
     const txTimestamp = Timestamp.fromDate(new Date());
     const dueAmount = FieldValue.increment(-tx.amount);
     const generatedPoints = tx.amount * this.bonusPercentage;
@@ -26,6 +34,7 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
       date: txTimestamp,
       type: TxDefinitions.TxType.DONATION,
       sourceTxId: tx.id,
+      target: tx.target,
     };
     const userTxBonus: TxDefinitions.UserTransaction = {
       amount: generatedPoints,
@@ -33,12 +42,13 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
       date: txTimestamp,
       type: TxDefinitions.TxType.BONUS,
       sourceTxId: tx.id,
+      target: tx.target,
     };
 
     await this.walletRef.update({
-      "cashback.approved": dueAmount,
-      "points.approved": duePoints,
-      "transactions": FieldValue.arrayUnion(userTxDonation, userTxBonus),
+      'cashback.approved': dueAmount,
+      'points.approved': duePoints,
+      transactions: FieldValue.arrayUnion(userTxDonation, userTxBonus),
     });
 
     await this.txRef.update({ status: TxDefinitions.TxStatus.ACCEPTED });

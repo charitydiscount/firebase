@@ -1,23 +1,23 @@
-import { Timestamp } from "@google-cloud/firestore";
+import { Timestamp } from '@google-cloud/firestore';
 
 export enum TxType {
   DONATION = 'DONATION',
   CASHOUT = 'CASHOUT',
   BONUS = 'BONUS',
-};
+}
 
 export enum TxStatus {
   ACCEPTED = 'ACCEPTED',
   REJECTED = 'REJECTED',
   PENDING = 'PENDING',
   ERROR = 'ERROR',
-};
+}
 
 export interface ProcessResult {
   status: TxStatus;
 }
 
-export interface Transaction {
+export interface TxRequest {
   id: string;
   type: TxType;
   amount: number;
@@ -33,19 +33,20 @@ export interface UserTransaction {
   date: Timestamp;
   type: TxType;
   sourceTxId: string;
+  target: string;
 }
 
 export interface UserWallet {
   cashback: {
     approved: number;
     pending: number;
-  }
+  };
   points: {
     approved: number;
-  }
+  };
   transactions: UserTransaction[];
 }
 
 export interface TxHandler {
-  process(tx: Transaction): Promise<ProcessResult>;
+  process(tx: TxRequest): Promise<ProcessResult>;
 }

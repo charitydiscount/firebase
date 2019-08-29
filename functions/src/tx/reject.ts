@@ -8,7 +8,9 @@ export default class RejectHandler implements TxDefinitions.TxHandler {
     this.txRef = txRef;
   }
 
-  async process(tx: TxDefinitions.Transaction): Promise<TxDefinitions.ProcessResult> {
+  async process(
+    tx: TxDefinitions.TxRequest
+  ): Promise<TxDefinitions.ProcessResult> {
     await this.txRef.update({ status: TxDefinitions.TxStatus.REJECTED });
     return { status: TxDefinitions.TxStatus.REJECTED };
   }

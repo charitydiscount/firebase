@@ -1,5 +1,9 @@
 import * as TxDefinitions from './types';
-import { DocumentReference, Timestamp, FieldValue } from '@google-cloud/firestore';
+import {
+  DocumentReference,
+  Timestamp,
+  FieldValue,
+} from '@google-cloud/firestore';
 
 export default class CashoutHandler implements TxDefinitions.TxHandler {
   private walletRef: DocumentReference;
@@ -10,7 +14,9 @@ export default class CashoutHandler implements TxDefinitions.TxHandler {
     this.txRef = txRef;
   }
 
-  async process(tx: TxDefinitions.Transaction): Promise<TxDefinitions.ProcessResult> {
+  async process(
+    tx: TxDefinitions.TxRequest
+  ): Promise<TxDefinitions.ProcessResult> {
     const txTimestamp = Timestamp.fromDate(new Date());
     const dueAmount = FieldValue.increment(-tx.amount);
 
@@ -20,11 +26,12 @@ export default class CashoutHandler implements TxDefinitions.TxHandler {
       date: txTimestamp,
       type: TxDefinitions.TxType.CASHOUT,
       sourceTxId: tx.id,
+      target: tx.target,
     };
 
     await this.walletRef.update({
-      "cashback.approved": dueAmount,
-      "transactions": FieldValue.arrayUnion(userTxCashout),
+      'cashback.approved': dueAmount,
+      transactions: FieldValue.arrayUnion(userTxCashout),
     });
 
     await this.txRef.update({ status: TxDefinitions.TxStatus.ACCEPTED });

@@ -6,16 +6,19 @@ import { DocumentReference, Firestore } from '@google-cloud/firestore';
 
 export async function processTx(
   db: Firestore,
-  tx: TxDefinitions.Transaction,
-  txRef: DocumentReference):
-  Promise<TxDefinitions.ProcessResult> {
-
+  tx: TxDefinitions.TxRequest,
+  txRef: DocumentReference
+): Promise<TxDefinitions.ProcessResult> {
   const txHandler = await getTxHandler(db, tx, txRef);
 
   return txHandler.process(tx);
 }
 
-async function getTxHandler(db: Firestore, tx: TxDefinitions.Transaction, txRef: DocumentReference): Promise<TxDefinitions.TxHandler> {
+async function getTxHandler(
+  db: Firestore,
+  tx: TxDefinitions.TxRequest,
+  txRef: DocumentReference
+): Promise<TxDefinitions.TxHandler> {
   const walletRef = db.doc(`points/${tx.userId}`);
   const userWallet = await walletRef.get();
 

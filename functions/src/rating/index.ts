@@ -17,7 +17,7 @@ export function updateProgramRating(
     .doc('programs')
     .set(
       {
-        reviews: {
+        ratings: {
           [`${reviews.shopUniqueCode}`]: {
             count,
             rating,

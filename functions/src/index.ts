@@ -64,6 +64,6 @@ export const processTransaction = functions.firestore
 
 export const updateOverallRating = functions.firestore
   .document('reviews/{programId}')
-  .onWrite(async (snap, context) => {
-    await updateProgramRating(db, snap.after.data() as ProgramReviews);
+  .onWrite((snap, context) => {
+    return updateProgramRating(db, snap.after.data() as ProgramReviews);
   });

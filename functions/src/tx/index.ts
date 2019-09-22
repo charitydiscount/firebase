@@ -27,7 +27,7 @@ async function getTxHandler(
     return new RejectHandler(txRef);
   }
 
-  const balance = userWallet.data()!.cashback!.approved;
+  const balance = userWallet.data()!.cashback.approved;
 
   if (tx.amount > balance) {
     console.log(`Not enough balance available`);

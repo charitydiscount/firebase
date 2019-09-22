@@ -27,6 +27,11 @@ service cloud.firestore {
     	allow read, write: if false;
       allow create: if isSignedIn();
     }
+    match /reviews/{shopId} {
+    	allow read: if true;
+      allow update: if isOwnReview(request);
+      allow create: if isSignedIn();
+    }
   }
 }
 
@@ -35,4 +40,7 @@ function belongsTo(userId) {
 }
 function isSignedIn() {
   return request.auth.uid != null;
+}
+function isOwnReview(request) {
+	return request.resource.data.reviews.size() == 1 && request.resource.data.reviews[request.auth.uid] != null;
 }

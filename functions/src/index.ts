@@ -2,10 +2,15 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { processTx } from './tx';
 import { TxStatus } from './tx/types';
+import { updateProgramRating } from './rating';
+import { ProgramReviews } from './rating/types';
 
 admin.initializeApp();
 const db = admin.firestore();
 
+/**
+ * Create the user wallet document when a new user registers
+ */
 export const createWalletDocument = functions.auth
   .user()
   .onCreate(async (user: functions.auth.UserRecord) => {
@@ -24,6 +29,9 @@ export const createWalletDocument = functions.auth
       });
   });
 
+/**
+ * Process the donation/cashout request
+ */
 export const processTransaction = functions.firestore
   .document('requests/{requestId}')
   .onCreate(async (snap, context) => {
@@ -52,4 +60,10 @@ export const processTransaction = functions.firestore
     } else {
       console.log(`Request ${snap.id} rejected.`);
     }
+  });
+
+export const updateOverallRating = functions.firestore
+  .document('reviews/{programId}')
+  .onWrite(async (snap, context) => {
+    await updateProgramRating(db, snap.after.data() as ProgramReviews);
   });

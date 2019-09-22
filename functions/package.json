@@ -14,13 +14,13 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "firebase-admin": "^8.3.0",
-    "firebase-functions": "^3.2.0",
-    "@google-cloud/firestore": "^2.2.7"
+    "@google-cloud/firestore": "^2.3.0",
+    "firebase-admin": "^8.6.0",
+    "firebase-functions": "^3.2.0"
   },
   "devDependencies": {
-    "tslint": "^5.19.0",
-    "typescript": "^3.5.3"
+    "tslint": "^5.20.0",
+    "typescript": "^3.6.3"
   },
   "private": true
 }

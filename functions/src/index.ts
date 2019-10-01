@@ -4,6 +4,7 @@ import { processTx } from './tx';
 import { TxStatus } from './tx/types';
 import { updateProgramRating } from './rating';
 import { ProgramReviews } from './rating/types';
+import { createWallet } from './user';
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -11,22 +12,13 @@ const db = admin.firestore();
 /**
  * Create the user wallet document when a new user registers
  */
-export const createWalletDocument = functions.auth
+export const handleNewUser = functions.auth
   .user()
-  .onCreate(async (user: functions.auth.UserRecord) => {
-    await db
-      .collection('points')
-      .doc(user.uid)
-      .create({
-        cashback: {
-          approved: 0.0,
-          pending: 0.0,
-        },
-        points: {
-          approved: 0.0,
-          pending: 0.0,
-        },
-      });
+  .onCreate((user: functions.auth.UserRecord) => {
+    const promises = [];
+    promises.push(createWallet(db, user));
+
+    return Promise.all(promises).catch((e) => console.log(e.message));
   });
 
 /**
@@ -52,7 +44,7 @@ export const processTransaction = functions.firestore
         createdAt: tx.createdAt,
         target: tx.target,
       },
-      snap.ref
+      snap.ref,
     );
 
     if (txResult.status === TxStatus.ACCEPTED) {

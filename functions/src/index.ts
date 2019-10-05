@@ -1,18 +1,21 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+
+admin.initializeApp();
+const db = admin.firestore();
+
 import { processTx } from './tx';
 import { TxStatus } from './tx/types';
 import { updateProgramRating } from './rating';
 import { ProgramReviews } from './rating/types';
 import { createWallet } from './user';
 
-admin.initializeApp();
-const db = admin.firestore();
-
 /**
  * Create the user wallet document when a new user registers
  */
-export const handleNewUser = functions.auth
+export const handleNewUser = functions
+  .region('europe-west1')
+  .auth
   .user()
   .onCreate((user: functions.auth.UserRecord) => {
     const promises = [];
@@ -24,7 +27,9 @@ export const handleNewUser = functions.auth
 /**
  * Process the donation/cashout request
  */
-export const processTransaction = functions.firestore
+export const processTransaction = functions
+  .region('europe-west1')
+  .firestore
   .document('requests/{requestId}')
   .onCreate(async (snap, context) => {
     const tx = snap.data();
@@ -54,7 +59,12 @@ export const processTransaction = functions.firestore
     }
   });
 
-export const updateOverallRating = functions.firestore
+/**
+ * Update the average rating of a program when a rating is written
+ */
+export const updateOverallRating = functions
+  .region('europe-west1')
+  .firestore
   .document('reviews/{programId}')
   .onWrite((snap, context) => {
     return updateProgramRating(db, snap.after.data() as ProgramReviews);

@@ -8,7 +8,7 @@ export function updateProgramRating(
   const reviewsArray = Object.values(reviews.reviews);
   const totalRating = reviewsArray
     .map((review) => review.rating)
-    .reduce((acc, currentRating) => acc + currentRating);
+    .reduce((r1, r2) => r1 + r2, 0);
   const count = reviewsArray.length;
   const rating = totalRating / count;
 

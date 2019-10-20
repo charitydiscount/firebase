@@ -2,12 +2,16 @@ import * as TxDefinitions from './types';
 import DonationHandler from './donation';
 import CashoutHandler from './cashout';
 import RejectHandler from './reject';
-import { DocumentReference, Firestore } from '@google-cloud/firestore';
+import {
+  DocumentReference,
+  Firestore,
+  FieldPath,
+} from '@google-cloud/firestore';
 
 export async function processTx(
   db: Firestore,
   tx: TxDefinitions.TxRequest,
-  txRef: DocumentReference
+  txRef: DocumentReference,
 ): Promise<TxDefinitions.ProcessResult> {
   const txHandler = await getTxHandler(db, tx, txRef);
 
@@ -17,8 +21,20 @@ export async function processTx(
 async function getTxHandler(
   db: Firestore,
   tx: TxDefinitions.TxRequest,
-  txRef: DocumentReference
+  txRef: DocumentReference,
 ): Promise<TxDefinitions.TxHandler> {
+  const concurrentRequest = await db
+    .collection('requests')
+    .where(FieldPath.documentId(), '<', txRef.id)
+    .where(FieldPath.documentId(), '>', txRef.id)
+    .where('userId', '==', tx.userId)
+    .where('status', '==', TxDefinitions.TxStatus.PENDING)
+    .get();
+  if (!concurrentRequest.empty) {
+    console.log('Concurrent transaction requests not allowed');
+    return new RejectHandler(txRef);
+  }
+
   const walletRef = db.doc(`points/${tx.userId}`);
   const userWallet = await walletRef.get();
 

@@ -23,14 +23,22 @@ service cloud.firestore {
     	allow read: if belongsTo(userId);
       allow write: if false;
     }
-    match /requests/{request} {
+    match /requests/{requestId} {
     	allow read, write: if false;
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && hasStatusPending();
     }
     match /reviews/{shopId} {
-    	allow read: if true;
-      allow update: if isOwnReview(request);
+    	allow read: if isSignedIn();
+      allow update: if isSignedIn();
       allow create: if isSignedIn();
+    }
+    match /otp-requests/{userId} {
+    	allow read: if false;
+      allow write: if belongsTo(userId);
+    }
+    match /otps/{userId} {
+      allow read: if belongsTo(userId);
+      allow update: if belongsTo(userId);
     }
   }
 }
@@ -41,6 +49,9 @@ function belongsTo(userId) {
 function isSignedIn() {
   return request.auth.uid != null;
 }
-function isOwnReview(request) {
+function isOwnReview() {
 	return request.resource.data.reviews.size() == 1 && request.resource.data.reviews[request.auth.uid] != null;
+}
+function hasStatusPending() {
+  return request.resource.data.status == 'PENDING';
 }

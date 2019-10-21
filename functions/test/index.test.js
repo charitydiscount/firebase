@@ -9,6 +9,14 @@ describe('Charity Discount Functions', () => {
 
   before(() => {
     adminInitStub = sinon.stub(admin, 'initializeApp');
+    test.mockConfig({
+      mail: {
+        api_key: '1234',
+        domain: 'charitydiscount.ro',
+        name: 'Charity Discount Test',
+        user: 'test@charitydiscount.ro',
+      },
+    });
   });
 
   after(() => {

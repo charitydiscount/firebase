@@ -5,11 +5,12 @@ admin.initializeApp();
 const db = admin.firestore();
 
 import { processTx } from './tx';
-import { TxStatus } from './tx/types';
+import { TxStatus, Commission } from './tx/types';
 import { updateProgramRating } from './rating';
 import { ProgramReviews } from './rating/types';
 import { createWallet } from './user';
 import { handleNewOtp } from './otp';
+import { updateWallet } from './tx/commission';
 
 /**
  * Create the user wallet document when a new user registers
@@ -96,3 +97,28 @@ export const generateOtp = functions
 
     return handleNewOtp(db, userRecord);
   });
+
+
+/**
+ * Update the user wallet on commissions update
+ */
+export const updateUserWallet = functions
+  .region('europe-west1')
+  .firestore.document('commissions/{userId}')
+  .onWrite((snap, context) => {
+    if (!snap.after.exists) {
+      return;
+    }
+
+    const userId = snap.after.id;
+    const previousCommissions = snap.before.exists ?
+      <Commission[]>snap.before.data()!.transactions : [];
+    const commissions = <Commission[]>snap.after.data()!.transactions;
+
+    if (!commissions) {
+      console.log(`No commissions for user ${userId}`);
+      return;
+    }
+
+    return updateWallet(db, userId, commissions, previousCommissions);
+  })

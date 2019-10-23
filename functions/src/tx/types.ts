@@ -1,9 +1,10 @@
-import { Timestamp } from '@google-cloud/firestore';
+import { Timestamp, FieldValue } from '@google-cloud/firestore';
 
 export enum TxType {
   DONATION = 'DONATION',
   CASHOUT = 'CASHOUT',
   BONUS = 'BONUS',
+  COMMISSION = 'COMMISSION',
 }
 
 export enum TxStatus {
@@ -30,10 +31,19 @@ export interface TxRequest {
 export interface UserTransaction {
   amount: number;
   currency: string;
-  date: Timestamp;
+  date: Timestamp | FieldValue;
   type: TxType;
   sourceTxId: string;
   target: string;
+}
+
+export interface Commission {
+  amount: number;
+  createdAt: Timestamp;
+  currency: string;
+  originId: number;
+  shopId: number;
+  status: string;
 }
 
 export interface UserWallet {
@@ -48,5 +58,5 @@ export interface UserWallet {
 }
 
 export interface TxHandler {
-  process(tx: TxRequest): Promise<ProcessResult>;
+  process(source: TxRequest): Promise<ProcessResult>;
 }

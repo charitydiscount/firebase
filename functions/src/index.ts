@@ -1,5 +1,9 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import path = require('path');
+import os = require('os');
+import fs = require('fs');
+import csvParse = require('csv-parser');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -11,6 +15,8 @@ import { ProgramReviews } from './rating/types';
 import { createWallet } from './user';
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
+import * as entity from './entities';
+import { FieldValue, Timestamp } from '@google-cloud/firestore';
 
 /**
  * Create the user wallet document when a new user registers
@@ -98,7 +104,6 @@ export const generateOtp = functions
     return handleNewOtp(db, userRecord);
   });
 
-
 /**
  * Update the user wallet on commissions update
  */
@@ -111,8 +116,9 @@ export const updateUserWallet = functions
     }
 
     const userId = snap.after.id;
-    const previousCommissions = snap.before.exists ?
-      <Commission[]>snap.before.data()!.transactions : [];
+    const previousCommissions = snap.before.exists
+      ? <Commission[]>snap.before.data()!.transactions
+      : [];
     const commissions = <Commission[]>snap.after.data()!.transactions;
 
     if (!commissions) {
@@ -121,4 +127,116 @@ export const updateUserWallet = functions
     }
 
     return updateWallet(db, userId, commissions, previousCommissions);
-  })
+  });
+
+const commissionsBucket = 'charitydiscount-commissions';
+const bucket = admin.storage().bucket(commissionsBucket);
+
+export const updateCommissionsFromStorage = functions
+  .region('europe-west1')
+  .storage.bucket(commissionsBucket)
+  .object()
+  .onFinalize(async (object) => {
+    const fileName = object.name || '';
+    const tempFilePath = path.join(os.tmpdir(), fileName);
+    await bucket.file(fileName).download({ destination: tempFilePath });
+    const userCommissions = {} as { [userId: string]: entity.Commission[] };
+    const shopsCollection = await db.collection('shops').get();
+    const programs: entity.Program[] = [];
+    shopsCollection.docs.forEach((doc) => programs.push(...doc.data().batch));
+    const relevantColumns = [
+      {
+        csv: 'ID',
+        target: 'originId',
+      },
+      {
+        csv: 'Program',
+        target: 'shopId',
+      },
+      {
+        csv: 'Commission Amount (RON)',
+        target: 'amount',
+      },
+      {
+        csv: 'Status',
+        target: 'status',
+      },
+      {
+        csv: 'Transaction Date',
+        target: 'createdAt',
+      },
+      {
+        csv: 'Click Tag',
+        target: 'userId',
+      },
+    ];
+    try {
+      await new Promise((resolve, reject) =>
+        fs
+          .createReadStream(tempFilePath)
+          .pipe(
+            csvParse({
+              mapHeaders: ({ header }) => {
+                const column = relevantColumns.find(
+                  (col) => col.csv === header,
+                );
+                if (column === undefined) {
+                  return null;
+                }
+
+                return column.target;
+              },
+              mapValues: ({ header, index, value }) => {
+                if (header !== 'shopId') {
+                  return value;
+                }
+                const program = programs.find((p) => p.name === value);
+                return !!program ? program.id : value;
+              },
+            }),
+          )
+          .on('data', (data) => {
+            const { userId, ...rawCommission } = data;
+            const commission = {
+              amount: Number.parseFloat(rawCommission.amount),
+              createdAt: Timestamp.fromMillis(
+                Date.parse(rawCommission.createdAt),
+              ),
+              currency: 'RON',
+              shopId: rawCommission.shopId,
+              status: rawCommission.status,
+              originId: rawCommission.originId,
+            };
+            userCommissions.hasOwnProperty(userId)
+              ? userCommissions[userId].push(commission)
+              : (userCommissions[userId] = [commission]);
+          })
+          .on('end', () => {
+            resolve(userCommissions);
+          })
+          .on('error', (error) => reject(error)),
+      );
+      fs.unlinkSync(tempFilePath);
+      const promises: Promise<any>[] = [];
+      for (const userId in userCommissions) {
+        const transactions: entity.Commission[] = userCommissions[userId];
+        promises.push(
+          db
+            .collection('commissions')
+            .doc(userId)
+            .set(
+              {
+                userId,
+                transactions: FieldValue.arrayUnion(...transactions),
+              },
+              { merge: true },
+            ),
+        );
+      }
+      return promises;
+    } catch (e) {
+      console.log(e);
+      fs.unlinkSync(tempFilePath);
+      return;
+    }
+  });

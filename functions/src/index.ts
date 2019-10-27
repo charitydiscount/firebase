@@ -17,6 +17,7 @@ import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import * as entity from './entities';
 import { FieldValue, Timestamp } from '@google-cloud/firestore';
+import {Contact, sendContactMessage} from "./contact";
 
 /**
  * Create the user wallet document when a new user registers
@@ -240,3 +241,10 @@ export const updateCommissionsFromStorage = functions
       return;
     }
   });
+
+export const sendContactMail = functions
+    .region('europe-west1')
+    .firestore.document('contact/{randomId}')
+    .onCreate((snap, context) => {
+        return sendContactMessage(db, snap.id, snap.data() as Contact);
+    });

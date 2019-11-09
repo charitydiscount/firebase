@@ -206,7 +206,7 @@ export const updateCommissionsFromStorage = functions
               currency: 'RON',
               shopId: rawCommission.shopId,
               status: rawCommission.status,
-              originId: rawCommission.originId,
+              originId: parseInt(rawCommission.originId),
             };
             userCommissions.hasOwnProperty(userId)
               ? userCommissions[userId].push(commission)

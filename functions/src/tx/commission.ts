@@ -15,18 +15,25 @@ export const updateWallet = async (
   db: Firestore,
   userId: string,
   newCommissions: Commission[],
-  previousCommissions: Commission[]) => {
-  const acceptedStatuses = ['accepted', 'paid'];
-  const unprocessedAcceptedCommissions = newCommissions
-    .filter((commission) => acceptedStatuses.includes(commission.status) &&
-      (previousCommissions.find((prev) =>
-        prev.originId === commission.originId) === undefined ||
-        !!previousCommissions.find((prev) =>
-          prev.originId === commission.originId &&
-          prev.status === 'pending')));
+  previousCommissions: Commission[],
+) => {
+  const acceptedStatuses = ['paid'];
+  const pendingStatuses = ['pending', 'accepted'];
+  const unprocessedAcceptedCommissions = newCommissions.filter(
+    (commission) =>
+      acceptedStatuses.includes(commission.status) &&
+      (previousCommissions.find(
+        (prev) => prev.originId === commission.originId,
+      ) === undefined ||
+        !!previousCommissions.find(
+          (prev) =>
+            prev.originId === commission.originId &&
+            pendingStatuses.includes(prev.status),
+        )),
+  );
 
   const pendingAmount = newCommissions
-    .filter((commission) => commission.status === 'pending')
+    .filter((commission) => pendingStatuses.includes(commission.status))
     .map((commission) => commission.amount)
     .reduce((a1, a2) => a1 + a2, 0);
 
@@ -39,14 +46,18 @@ export const updateWallet = async (
   const userDevices: string[] = [];
   for await (const tokenRef of userTokenDocs.map((doc) => doc.get())) {
     const device = tokenRef.data();
-    if (device!.notifications) {
+    if (device!.notifications === undefined || device!.notifications) {
       userDevices.push(device!.token);
     }
   }
 
-  const newPendingCommissions = newCommissions
-    .filter((commission) => commission.status === 'pending' &&
-      previousCommissions.find((prev) => prev.originId === commission.originId) === undefined);
+  const newPendingCommissions = newCommissions.filter(
+    (commission) =>
+      pendingStatuses.includes(commission.status) &&
+      previousCommissions.find(
+        (prev) => prev.originId === commission.originId,
+      ) === undefined,
+  );
   newPendingCommissions.forEach((commission) => {
     const notification: messaging.MessagingPayload = {
       notification: {
@@ -56,7 +67,9 @@ export const updateWallet = async (
       },
     };
 
-    userDevices.forEach((deviceToken) => fcm.sendToDevice(deviceToken, notification));
+    userDevices.forEach((deviceToken) =>
+      fcm.sendToDevice(deviceToken, notification),
+    );
   });
 
   if (unprocessedAcceptedCommissions.length > 0) {
@@ -69,10 +82,15 @@ export const updateWallet = async (
         },
       };
 
-      userDevices.forEach((deviceToken) => fcm.sendToDevice(deviceToken, notification));
-    })
+      userDevices.forEach((deviceToken) =>
+        fcm.sendToDevice(deviceToken, notification),
+      );
+    });
 
-    const newTransactions = getTxFromCommissions(unprocessedAcceptedCommissions, userId);
+    const newTransactions = getTxFromCommissions(
+      unprocessedAcceptedCommissions,
+      userId,
+    );
     const incommingAcceptedAmount = unprocessedAcceptedCommissions
       .map((commission) => commission.amount)
       .reduce((a1, a2) => a1 + a2, 0);
@@ -80,18 +98,19 @@ export const updateWallet = async (
     return userWalletRef.update({
       'cashback.pending': pendingAmount,
       'cashback.approved': FieldValue.increment(incommingAcceptedAmount),
-      'transactions': FieldValue.arrayUnion(...newTransactions)
+      'transactions': FieldValue.arrayUnion(...newTransactions),
     });
   } else {
     return userWalletRef.update({
       'cashback.pending': pendingAmount,
     });
   }
-}
+};
 
 const getTxFromCommissions = (
   unprocessedCommissions: Commission[],
-  userId: string): UserTransaction[] => {
+  userId: string,
+): UserTransaction[] => {
   return unprocessedCommissions.map((comm) => {
     return <UserTransaction>{
       amount: comm.amount,

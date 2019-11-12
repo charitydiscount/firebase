@@ -38,7 +38,7 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
     };
     const userTxBonus: TxDefinitions.UserTransaction = {
       amount: generatedPoints,
-      currency: tx.currency,
+      currency: 'Charity Points',
       date: txTimestamp,
       type: TxDefinitions.TxType.BONUS,
       sourceTxId: tx.id,

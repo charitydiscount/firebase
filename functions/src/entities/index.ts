@@ -7,6 +7,7 @@ export interface Commission {
   shopId: number;
   status: string;
   originId: number;
+  reason?: string;
 }
 
 export const commissionKeys = [

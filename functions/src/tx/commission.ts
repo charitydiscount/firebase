@@ -61,8 +61,8 @@ export const updateWallet = async (
   newPendingCommissions.forEach((commission) => {
     const notification: messaging.MessagingPayload = {
       notification: {
-        title: 'Purchase Registered! 🔥',
-        body: `${commission.amount} ${commission.currency} should be added soon to your account`,
+        title: 'Felicitări!🛒',
+        body: `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`,
         clickAction: 'FLUTTER_NOTIFICATION_CLICK',
       },
     };
@@ -76,8 +76,8 @@ export const updateWallet = async (
     unprocessedAcceptedCommissions.forEach((commission) => {
       const notification: messaging.MessagingPayload = {
         notification: {
-          title: 'Cashback Approved! 💰',
-          body: `${commission.amount} ${commission.currency} was just added to your wallet`,
+          title: 'Cashback primit!💰',
+          body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
           clickAction: 'FLUTTER_NOTIFICATION_CLICK',
         },
       };

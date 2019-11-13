@@ -16,8 +16,8 @@ import { createWallet } from './user';
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import * as entity from './entities';
-import { FieldValue, Timestamp } from '@google-cloud/firestore';
-import {Contact, sendContactMessage} from "./contact";
+import { Timestamp } from '@google-cloud/firestore';
+import { Contact, sendContactMessage } from "./contact";
 
 /**
  * Create the user wallet document when a new user registers
@@ -116,19 +116,37 @@ export const updateUserWallet = functions
       return;
     }
 
-    const userId = snap.after.id;
-    const previousCommissions = snap.before.exists
-      ? <Commission[]>snap.before.data()!.transactions
-      : [];
-    const commissions = <Commission[]>snap.after.data()!.transactions;
+    const uid = snap.after.id;
+    let previousCommissions: Commission[] = [];
+    if (snap.before.exists) {
+      previousCommissions = getUserCommissions(
+        <{
+          userId: string,
+          [commissionId: number]: Commission
+        }>snap.after.data());
+    }
+    const commissions = getUserCommissions(
+      <{
+        userId: string,
+        [commissionId: number]: Commission
+      }>snap.after.data());
 
     if (!commissions) {
-      console.log(`No commissions for user ${userId}`);
+      console.log(`No commissions for user ${uid}`);
       return;
     }
 
-    return updateWallet(db, userId, commissions, previousCommissions);
+    return updateWallet(db, uid, Object.values(commissions), previousCommissions);
   });
+
+const getUserCommissions = (
+  commissions: {
+    userId: string,
+    [commissionId: number]: Commission
+  }) => {
+  const { userId, ...commissionsMap } = commissions;
+  return Object.values(commissionsMap);
+}
 
 const commissionsBucket = 'charitydiscount-commissions';
 const bucket = admin.storage().bucket(commissionsBucket);
@@ -170,6 +188,10 @@ export const updateCommissionsFromStorage = functions
         csv: 'Click Tag',
         target: 'userId',
       },
+      {
+        csv: 'Comments',
+        target: 'reason',
+      }
     ];
     try {
       await new Promise((resolve, reject) =>
@@ -198,7 +220,7 @@ export const updateCommissionsFromStorage = functions
           )
           .on('data', (data) => {
             const { userId, ...rawCommission } = data;
-            const commission = {
+            const commission: entity.Commission = {
               amount: Number.parseFloat(rawCommission.amount),
               createdAt: Timestamp.fromMillis(
                 Date.parse(rawCommission.createdAt),
@@ -208,9 +230,13 @@ export const updateCommissionsFromStorage = functions
               status: rawCommission.status,
               originId: parseInt(rawCommission.originId),
             };
-            userCommissions.hasOwnProperty(userId)
-              ? userCommissions[userId].push(commission)
-              : (userCommissions[userId] = [commission]);
+            if (rawCommission.reason && Array.isArray(rawCommission.reason)) {
+              commission.reason = rawCommission.reason.join(' ');
+            }
+            userCommissions[userId] = {
+              ...userCommissions[userId],
+              ...{ [commission.originId]: commission }
+            }
           })
           .on('end', () => {
             resolve(userCommissions);
@@ -220,7 +246,6 @@ export const updateCommissionsFromStorage = functions
       fs.unlinkSync(tempFilePath);
       const promises: Promise<any>[] = [];
       for (const userId in userCommissions) {
-        const transactions: entity.Commission[] = userCommissions[userId];
         promises.push(
           db
             .collection('commissions')
@@ -228,7 +253,7 @@ export const updateCommissionsFromStorage = functions
             .set(
               {
                 userId,
-                transactions: FieldValue.arrayUnion(...transactions),
+                ...userCommissions[userId],
               },
               { merge: true },
             ),
@@ -243,8 +268,8 @@ export const updateCommissionsFromStorage = functions
   });
 
 export const sendContactMail = functions
-    .region('europe-west1')
-    .firestore.document('contact/{randomId}')
-    .onCreate((snap, context) => {
-        return sendContactMessage(db, snap.id, snap.data() as Contact);
-    });
+  .region('europe-west1')
+  .firestore.document('contact/{randomId}')
+  .onCreate((snap, context) => {
+    return sendContactMessage(db, snap.id, snap.data() as Contact);
+  });

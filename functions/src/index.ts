@@ -25,11 +25,14 @@ import { Contact, sendContactMessage } from "./contact";
 export const handleNewUser = functions
   .region('europe-west1')
   .auth.user()
-  .onCreate((user: functions.auth.UserRecord) => {
-    const promises = [];
-    promises.push(createWallet(db, user));
-
-    return Promise.all(promises).catch((e) => console.log(e.message));
+  .onCreate(async (user: functions.auth.UserRecord) => {
+    try {
+      return await createWallet(db, user);
+    }
+    catch (e) {
+      console.log(e.message);
+      return undefined;
+    }
   });
 
 /**
@@ -55,6 +58,7 @@ export const processTransaction = functions
         userId: tx.userId,
         createdAt: tx.createdAt,
         target: tx.target,
+        status: tx.status,
       },
       snap.ref,
     );

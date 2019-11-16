@@ -26,6 +26,7 @@ export interface TxRequest {
   userId: string;
   createdAt: Timestamp;
   target: string;
+  status: TxStatus;
 }
 
 export interface UserTransaction {

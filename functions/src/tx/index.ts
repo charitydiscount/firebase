@@ -7,6 +7,7 @@ import {
   Firestore,
   FieldPath,
 } from '@google-cloud/firestore';
+import NoopHandler from './noop';
 
 export async function processTx(
   db: Firestore,
@@ -23,6 +24,10 @@ async function getTxHandler(
   tx: TxDefinitions.TxRequest,
   txRef: DocumentReference,
 ): Promise<TxDefinitions.TxHandler> {
+  if (tx.status !== TxDefinitions.TxStatus.PENDING) {
+    return new NoopHandler();
+  }
+
   const concurrentRequest = await db
     .collection('requests')
     .where(FieldPath.documentId(), '<', txRef.id)

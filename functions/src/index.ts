@@ -17,7 +17,7 @@ import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import * as entity from './entities';
 import { Timestamp } from '@google-cloud/firestore';
-import { Contact, sendContactMessage } from "./contact";
+import { Contact, sendContactMessage } from './contact';
 
 /**
  * Create the user wallet document when a new user registers
@@ -28,8 +28,7 @@ export const handleNewUser = functions
   .onCreate(async (user: functions.auth.UserRecord) => {
     try {
       return await createWallet(db, user);
-    }
-    catch (e) {
+    } catch (e) {
       console.log(e.message);
       return undefined;
     }
@@ -124,33 +123,43 @@ export const updateUserWallet = functions
     let previousCommissions: Commission[] = [];
     if (snap.before.exists) {
       previousCommissions = getUserCommissions(
-        <{
-          userId: string,
-          [commissionId: number]: Commission
-        }>snap.after.data());
+        <
+          {
+            userId: string;
+            [commissionId: number]: Commission;
+          }
+        >snap.before.data(),
+      );
     }
     const commissions = getUserCommissions(
-      <{
-        userId: string,
-        [commissionId: number]: Commission
-      }>snap.after.data());
+      <
+        {
+          userId: string;
+          [commissionId: number]: Commission;
+        }
+      >snap.after.data(),
+    );
 
     if (!commissions) {
       console.log(`No commissions for user ${uid}`);
       return;
     }
 
-    return updateWallet(db, uid, Object.values(commissions), previousCommissions);
+    return updateWallet(
+      db,
+      uid,
+      Object.values(commissions),
+      previousCommissions,
+    );
   });
 
-const getUserCommissions = (
-  commissions: {
-    userId: string,
-    [commissionId: number]: Commission
-  }) => {
+const getUserCommissions = (commissions: {
+  userId: string;
+  [commissionId: number]: Commission;
+}) => {
   const { userId, ...commissionsMap } = commissions;
   return Object.values(commissionsMap);
-}
+};
 
 const commissionsBucket = 'charitydiscount-commissions';
 const bucket = admin.storage().bucket(commissionsBucket);
@@ -165,6 +174,8 @@ export const updateCommissionsFromStorage = functions
     await bucket.file(fileName).download({ destination: tempFilePath });
     const userCommissions = {} as { [userId: string]: entity.Commission[] };
     const shopsCollection = await db.collection('shops').get();
+    const meta = await db.doc('meta/2performant').get();
+    const userPercent: number = meta.data()!.percentage || 0.6;
     const programs: entity.Program[] = [];
     shopsCollection.docs.forEach((doc) => programs.push(...doc.data().batch));
     const relevantColumns = [
@@ -195,7 +206,7 @@ export const updateCommissionsFromStorage = functions
       {
         csv: 'Comments',
         target: 'reason',
-      }
+      },
     ];
     try {
       await new Promise((resolve, reject) =>
@@ -225,7 +236,7 @@ export const updateCommissionsFromStorage = functions
           .on('data', (data) => {
             const { userId, ...rawCommission } = data;
             const commission: entity.Commission = {
-              amount: Number.parseFloat(rawCommission.amount),
+              amount: Number.parseFloat(rawCommission.amount) * userPercent,
               createdAt: Timestamp.fromMillis(
                 Date.parse(rawCommission.createdAt),
               ),
@@ -239,8 +250,8 @@ export const updateCommissionsFromStorage = functions
             }
             userCommissions[userId] = {
               ...userCommissions[userId],
-              ...{ [commission.originId]: commission }
-            }
+              ...{ [commission.originId]: commission },
+            };
           })
           .on('end', () => {
             resolve(userCommissions);

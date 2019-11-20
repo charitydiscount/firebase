@@ -98,11 +98,13 @@ export const generateOtp = functions
 
     // throttle the otp generation (30 seconds)
     const userOtp = await db.doc(`otps/${userId}`).get();
-    const now = admin.firestore.Timestamp.now().toMillis();
-    const lastGenerated = userOtp.data()!.generatedAt.toMillis();
-    if (userOtp.exists && lastGenerated + 30000 > now) {
-      console.log(`Request throttled`);
-      return;
+    if (userOtp.exists) {
+      const lastGenerated = userOtp.data()!.generatedAt.toMillis();
+      const now = admin.firestore.Timestamp.now().toMillis();
+      if (lastGenerated + 30000 > now) {
+        console.log(`Request throttled`);
+        return;
+      }
     }
 
     return handleNewOtp(db, userRecord);

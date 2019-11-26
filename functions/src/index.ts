@@ -163,17 +163,19 @@ const getUserCommissions = (commissions: {
   return Object.values(commissionsMap);
 };
 
-const commissionsBucket = 'charitydiscount-commissions';
-const bucket = admin.storage().bucket(commissionsBucket);
+const commissionsBucketName = 'charitydiscount-commissions';
+const commissionsBucket = admin.storage().bucket(commissionsBucketName);
 
 export const updateCommissionsFromStorage = functions
   .region('europe-west1')
-  .storage.bucket(commissionsBucket)
+  .storage.bucket(commissionsBucketName)
   .object()
   .onFinalize(async (object) => {
     const fileName = object.name || '';
     const tempFilePath = path.join(os.tmpdir(), fileName);
-    await bucket.file(fileName).download({ destination: tempFilePath });
+    await commissionsBucket
+      .file(fileName)
+      .download({ destination: tempFilePath });
     const userCommissions = {} as { [userId: string]: entity.Commission[] };
     const shopsCollection = await db.collection('shops').get();
     const meta = await db.doc('meta/2performant').get();

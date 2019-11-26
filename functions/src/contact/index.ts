@@ -27,7 +27,7 @@ export async function sendContactMessage(db: Firestore, randomId: string, ct: Co
     </body>
   </html>
   `;
-    return mail.sendEmail("support@mail.charitydiscount.ro", ct.subject, body)
+    return mail.sendEmail("charitydiscount@gmail.com", ct.subject, body)
         .then(
             () => {
                 console.log("Mail from id:" + randomId + " succesfully sent");

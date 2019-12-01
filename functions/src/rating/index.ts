@@ -5,7 +5,7 @@ export function updateProgramRating(
   db: Firestore,
   reviews: RatingTypes.ProgramReviews
 ) {
-  const reviewsArray = Object.values(reviews.reviews);
+  const reviewsArray = Object.values(reviews.reviews || {});
   const totalRating = reviewsArray
     .map((review) => review.rating)
     .reduce((r1, r2) => r1 + r2, 0);

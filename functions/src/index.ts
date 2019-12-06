@@ -18,6 +18,7 @@ import { updateWallet } from './tx/commission';
 import * as entity from './entities';
 import { Timestamp } from '@google-cloud/firestore';
 import { Contact, sendContactMessage } from './contact';
+import searchEndpoints from './search';
 
 /**
  * Create the user wallet document when a new user registers
@@ -292,3 +293,7 @@ export const sendContactMail = functions
   .onCreate((snap, context) => {
     return sendContactMessage(db, snap.id, snap.data() as Contact);
   });
+
+export const search = functions
+  .region('europe-west1')
+  .https.onRequest(searchEndpoints);

@@ -5,8 +5,8 @@ const firebaseAuth = (req: any, res: any, next: any) => {
   admin
     .auth()
     .verifyIdToken(req.token)
-    .then(() => {
-      req.isServiceAccount = true;
+    .then((decodedToken) => {
+      req.userId = decodedToken.uid;
       next();
     })
     .catch(() => res.sendStatus(401));

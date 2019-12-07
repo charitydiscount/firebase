@@ -14,10 +14,6 @@ async function searchPrograms(query: string, exact: boolean = false) {
   if (!elastic) {
     elastic = new Client({
       node: elasticConfig.endpoint,
-      auth: {
-        username: elasticConfig.user,
-        password: elasticConfig.pass,
-      },
     });
   }
   let queryOperator = 'prefix';
@@ -56,10 +52,6 @@ async function searchProducts(
   if (!elastic) {
     elastic = new Client({
       node: elasticConfig.endpoint,
-      auth: {
-        username: elasticConfig.user,
-        password: elasticConfig.pass,
-      },
     });
   }
 

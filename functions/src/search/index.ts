@@ -1,7 +1,7 @@
 import express = require('express');
 import bearerToken = require('express-bearer-token');
 import helmet = require('helmet');
-import middlewares from './middleware';
+import middlewares from '../middlwares';
 import elastic from './elastic';
 
 const searchEndpoints = express();

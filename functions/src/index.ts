@@ -7,13 +7,13 @@ const db = admin.firestore();
 import { processTx } from './tx';
 import { TxStatus, Commission } from './tx/types';
 import { updateProgramRating } from './rating';
-import { ProgramReviews } from './rating/types';
 import { createWallet } from './user';
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import { Contact, sendContactMessage } from './contact';
-import searchEndpoints from './search';
-import commissions from './commissions';
+import searchApp from './search';
+import commissionsUtil from './commissions';
+import promotionsApp from './promotions';
 
 /**
  * Create the user wallet document when a new user registers
@@ -72,7 +72,8 @@ export const updateOverallRating = functions
   .region('europe-west1')
   .firestore.document('reviews/{programId}')
   .onWrite((snap, context) => {
-    return updateProgramRating(db, snap.after.data() as ProgramReviews);
+    //@ts-ignore
+    return updateProgramRating(db, snap.after.data());
   });
 
 /**
@@ -161,9 +162,11 @@ const getUserCommissions = (commissions: {
 
 export const updateCommissionsFromStorage = functions
   .region('europe-west1')
-  .storage.bucket(commissions.commissionsBucketName)
+  .storage.bucket(commissionsUtil.commissionsBucketName)
   .object()
-  .onFinalize((object) => commissions.updateCommissionFromBucket(db, object));
+  .onFinalize((object) =>
+    commissionsUtil.updateCommissionFromBucket(db, object),
+  );
 
 export const sendContactMail = functions
   .region('europe-west1')
@@ -174,4 +177,8 @@ export const sendContactMail = functions
 
 export const search = functions
   .region('europe-west1')
-  .https.onRequest(searchEndpoints);
+  .https.onRequest(searchApp);
+
+export const promotions = functions
+  .region('europe-west1')
+  .https.onRequest(promotionsApp);

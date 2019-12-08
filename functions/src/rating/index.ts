@@ -1,9 +1,9 @@
-import * as RatingTypes from './types';
+import * as entities from '../entities';
 import { Firestore } from '@google-cloud/firestore';
 
 export function updateProgramRating(
   db: Firestore,
-  reviews: RatingTypes.ProgramReviews
+  reviews: entities.ProgramReviews,
 ) {
   const reviewsArray = Object.values(reviews.reviews || {});
   const totalRating = reviewsArray
@@ -24,6 +24,6 @@ export function updateProgramRating(
           },
         },
       },
-      { merge: true }
+      { merge: true },
     );
 }

@@ -69,3 +69,37 @@ export const programKeys = [
   'sellingCountries',
   'source',
 ];
+
+export interface Promotion {
+  id: number;
+  name: string;
+  programId: number;
+  campaignLogo: string;
+  promotionStart: Date;
+  promotionEnd: Date;
+  landingPageLink: string;
+  source: string;
+}
+
+export interface Reviewer {
+  userId: string;
+  name: string;
+  photoUrl: string;
+}
+
+export interface Review {
+  reviewer: Reviewer;
+  rating: number;
+  description: string;
+  createdAt: Timestamp;
+}
+
+export interface ProgramReviews {
+  shopUniqueCode: string;
+  reviews: { [userId: string]: Review };
+}
+
+export interface ProgramOverallRating {
+  rating: number;
+  count: number;
+}

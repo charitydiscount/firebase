@@ -85,7 +85,9 @@ async function getPromotions(): Promise<Promotion[]> {
     p.programId = p.program.id;
   });
 
-  await memcache.set('2p-promotions', promotions.toString(), { expires: 3600 });
+  await memcache.set('2p-promotions', JSON.stringify(promotions), {
+    expires: 3600,
+  });
 
   return promotions;
 }

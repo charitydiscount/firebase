@@ -2,6 +2,9 @@ import * as admin from 'firebase-admin';
 import cors = require('cors');
 
 const firebaseAuth = (req: any, res: any, next: any) => {
+  if (!req.token) {
+    return res.sendStatus(401);
+  }
   admin
     .auth()
     .verifyIdToken(req.token)

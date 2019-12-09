@@ -57,7 +57,7 @@ async function getPromotions(): Promise<Promotion[]> {
   const cachedPromotions = await memcache.get('2p-promotions');
   if (cachedPromotions.value !== null) {
     //@ts-ignore
-    return cachedPromotions.value;
+    return JSON.parse(cachedPromotions.value.toString());
   }
 
   if (!authHeaders) {
@@ -65,7 +65,7 @@ async function getPromotions(): Promise<Promotion[]> {
   }
 
   let promotionData = await get2PPromotionDataForPage(1);
-  const promotions = promotionData.advertiserPromotions;
+  const promotions: any[] = promotionData.advertiserPromotions;
 
   const totalPages = promotionData.pagination.pages;
   const firstPage = promotionData.pagination.currentPage;
@@ -85,7 +85,7 @@ async function getPromotions(): Promise<Promotion[]> {
     p.programId = p.program.id;
   });
 
-  await memcache.set('2p-promotions', promotions, { expires: 3600 });
+  await memcache.set('2p-promotions', promotions.toString(), { expires: 3600 });
 
   return promotions;
 }

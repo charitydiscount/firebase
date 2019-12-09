@@ -13,7 +13,7 @@ import { updateWallet } from './tx/commission';
 import { Contact, sendContactMessage } from './contact';
 import searchApp from './search';
 import commissionsUtil from './commissions';
-import promotionsApp from './promotions';
+import programsApp from './programs';
 
 /**
  * Create the user wallet document when a new user registers
@@ -179,6 +179,6 @@ export const search = functions
   .region('europe-west1')
   .https.onRequest(searchApp);
 
-export const promotions = functions
+export const programs = functions
   .region('europe-west1')
-  .https.onRequest(promotionsApp);
+  .https.onRequest(programsApp);

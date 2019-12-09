@@ -13,6 +13,6 @@ app.use(helmet());
 app.use(bearerToken());
 app.use(middlewares.firebaseAuth);
 
-app.get('/:programId(\\d+)', promotions.getForProgram);
+app.get('/:programId(\\d+)/promotions', promotions.getForProgram);
 
 export default app;

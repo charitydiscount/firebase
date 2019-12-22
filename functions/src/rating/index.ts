@@ -1,8 +1,8 @@
 import * as entities from '../entities';
-import { Firestore } from '@google-cloud/firestore';
+import { firestore } from 'firebase-admin';
 
 export function updateProgramRating(
-  db: Firestore,
+  db: firestore.Firestore,
   reviews: entities.ProgramReviews,
 ) {
   const reviewsArray = Object.values(reviews.reviews || {});

@@ -1,17 +1,21 @@
 import * as TxDefinitions from './types';
-import { DocumentReference } from '@google-cloud/firestore';
+import { firestore } from 'firebase-admin';
 
 export default class RejectHandler implements TxDefinitions.TxHandler {
-  private txRef: DocumentReference;
+  private txRef: firestore.DocumentReference;
 
-  constructor(txRef: DocumentReference) {
+  constructor(txRef: firestore.DocumentReference) {
     this.txRef = txRef;
   }
 
   async process(
-    tx: TxDefinitions.TxRequest
+    tx: TxDefinitions.TxRequest,
   ): Promise<TxDefinitions.ProcessResult> {
-    await this.txRef.update({ status: TxDefinitions.TxStatus.REJECTED });
+    const txTimestamp = firestore.Timestamp.fromDate(new Date());
+    await this.txRef.update({
+      status: TxDefinitions.TxStatus.REJECTED,
+      updatedAt: txTimestamp,
+    });
     return { status: TxDefinitions.TxStatus.REJECTED };
   }
 }

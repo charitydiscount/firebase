@@ -1,8 +1,8 @@
-import { Timestamp } from '@google-cloud/firestore';
+import { firestore } from 'firebase-admin';
 
 export interface Commission {
   amount: number;
-  createdAt: Timestamp;
+  createdAt: firestore.Timestamp;
   currency: string;
   shopId: number;
   status: string;
@@ -91,7 +91,7 @@ export interface Review {
   reviewer: Reviewer;
   rating: number;
   description: string;
-  createdAt: Timestamp;
+  createdAt: firestore.Timestamp;
 }
 
 export interface ProgramReviews {

@@ -1,4 +1,4 @@
-import { Timestamp, FieldValue } from '@google-cloud/firestore';
+import { firestore } from 'firebase-admin';
 
 export enum TxType {
   DONATION = 'DONATION',
@@ -24,7 +24,7 @@ export interface TxRequest {
   amount: number;
   currency: string;
   userId: string;
-  createdAt: Timestamp;
+  createdAt: firestore.Timestamp;
   target: string;
   status: TxStatus;
 }
@@ -32,7 +32,7 @@ export interface TxRequest {
 export interface UserTransaction {
   amount: number;
   currency: string;
-  date: Timestamp | FieldValue;
+  date: firestore.Timestamp | firestore.FieldValue;
   type: TxType;
   sourceTxId: string;
   target: string;
@@ -40,7 +40,7 @@ export interface UserTransaction {
 
 export interface Commission {
   amount: number;
-  createdAt: Timestamp;
+  createdAt: firestore.Timestamp;
   currency: string;
   originId: number;
   shopId: number;

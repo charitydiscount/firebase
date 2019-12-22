@@ -1,9 +1,4 @@
-import { Client } from '@elastic/elasticsearch';
-import { config } from 'firebase-functions';
-
-const elasticConfig = config().elastic;
-
-let elastic: Client;
+import elastic from '../elastic';
 
 /**
  * Search the programs index based on the provied query (simple search term)
@@ -11,17 +6,12 @@ let elastic: Client;
  * @param {Boolean} exact
  */
 async function searchPrograms(query: string, exact: boolean = false) {
-  if (!elastic) {
-    elastic = new Client({
-      node: elasticConfig.endpoint,
-    });
-  }
   let queryOperator = 'prefix';
   if (exact) {
     queryOperator = 'term';
   }
 
-  return search(elasticConfig.index_programs, query, queryOperator, 'name');
+  return search(elastic.indeces.PROGRAMS_INDEX, query, queryOperator, 'name');
 }
 
 interface ProductsQueryParams {
@@ -49,12 +39,6 @@ async function searchProducts(
     max,
   }: ProductsQueryParams,
 ) {
-  if (!elastic) {
-    elastic = new Client({
-      node: elasticConfig.endpoint,
-    });
-  }
-
   const searchBody: any = {
     from: page,
     size: size,
@@ -99,8 +83,8 @@ async function searchProducts(
   }
 
   try {
-    const { body } = await elastic.search({
-      index: elasticConfig.index_products,
+    const { body } = await elastic.client.search({
+      index: elastic.indeces.PRODUCTS_INDEX.index_products,
       body: searchBody,
     });
 
@@ -124,7 +108,7 @@ async function search(
   field: string,
 ) {
   try {
-    const { body } = await elastic.search({
+    const { body } = await elastic.client.search({
       index,
       body: {
         from: 0,
@@ -146,7 +130,7 @@ async function search(
 }
 
 const featured = () => {
-  return searchProducts(elasticConfig.featured || 'iarna', {
+  return searchProducts(elastic.indeces.FEATURED_CATEGORY || 'iarna', {
     fields: ['category'],
   });
 };

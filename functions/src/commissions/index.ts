@@ -5,13 +5,12 @@ import fs = require('fs');
 import csvParse = require('csv-parser');
 import * as entity from '../entities';
 import { ObjectMetadata } from 'firebase-functions/lib/providers/storage';
-import { Firestore, Timestamp } from '@google-cloud/firestore';
 
 const commissionsBucketName = 'charitydiscount-commissions';
 const commissionsBucket = admin.storage().bucket(commissionsBucketName);
 
 const updateCommissionFromBucket = async (
-  db: Firestore,
+  db: admin.firestore.Firestore,
   object: ObjectMetadata,
 ) => {
   const fileName = object.name || '';
@@ -82,7 +81,7 @@ const updateCommissionFromBucket = async (
           const { userId, ...rawCommission } = data;
           const commission: entity.Commission = {
             amount: Number.parseFloat(rawCommission.amount) * userPercent,
-            createdAt: Timestamp.fromMillis(
+            createdAt: admin.firestore.Timestamp.fromMillis(
               Date.parse(rawCommission.createdAt),
             ),
             currency: 'RON',

@@ -1,6 +1,5 @@
 import { Commission, UserTransaction, TxType } from './types';
-import { Firestore, FieldValue } from '@google-cloud/firestore';
-import { messaging } from 'firebase-admin';
+import { messaging, firestore } from 'firebase-admin';
 
 const fcm = messaging();
 
@@ -12,7 +11,7 @@ const fcm = messaging();
  * @param previousCommissions The previous state of the commissions
  */
 export const updateWallet = async (
-  db: Firestore,
+  db: firestore.Firestore,
   userId: string,
   newCommissions: Commission[],
   previousCommissions: Commission[],
@@ -97,8 +96,10 @@ export const updateWallet = async (
 
     return userWalletRef.update({
       'cashback.pending': pendingAmount,
-      'cashback.approved': FieldValue.increment(incommingAcceptedAmount),
-      'transactions': FieldValue.arrayUnion(...newTransactions),
+      'cashback.approved': firestore.FieldValue.increment(
+        incommingAcceptedAmount,
+      ),
+      'transactions': firestore.FieldValue.arrayUnion(...newTransactions),
     });
   } else {
     return userWalletRef.update({

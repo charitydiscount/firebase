@@ -1,7 +1,10 @@
 import { auth } from 'firebase-functions';
-import { Firestore } from '@google-cloud/firestore';
+import { firestore } from 'firebase-admin';
 
-export const createWallet = (db: Firestore, user: auth.UserRecord) => {
+export const createWallet = (
+  db: firestore.Firestore,
+  user: auth.UserRecord,
+) => {
   return db
     .collection('points')
     .doc(user.uid)

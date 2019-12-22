@@ -1,24 +1,24 @@
 import * as TxDefinitions from './types';
-import {
-  DocumentReference,
-  Timestamp,
-  FieldValue,
-} from '@google-cloud/firestore';
+import { firestore } from 'firebase-admin';
+import elastic from '../elastic';
 
 export default class CashoutHandler implements TxDefinitions.TxHandler {
-  private walletRef: DocumentReference;
-  private txRef: DocumentReference;
+  private walletRef: firestore.DocumentReference;
+  private txRef: firestore.DocumentReference;
 
-  constructor(walletRef: DocumentReference, txRef: DocumentReference) {
+  constructor(
+    walletRef: firestore.DocumentReference,
+    txRef: firestore.DocumentReference,
+  ) {
     this.walletRef = walletRef;
     this.txRef = txRef;
   }
 
   async process(
-    tx: TxDefinitions.TxRequest
+    tx: TxDefinitions.TxRequest,
   ): Promise<TxDefinitions.ProcessResult> {
-    const txTimestamp = Timestamp.fromDate(new Date());
-    const dueAmount = FieldValue.increment(-tx.amount);
+    const txTimestamp = firestore.Timestamp.fromDate(new Date());
+    const dueAmount = firestore.FieldValue.increment(-tx.amount);
 
     const userTxCashout: TxDefinitions.UserTransaction = {
       amount: tx.amount,
@@ -31,10 +31,18 @@ export default class CashoutHandler implements TxDefinitions.TxHandler {
 
     await this.walletRef.update({
       'cashback.approved': dueAmount,
-      transactions: FieldValue.arrayUnion(userTxCashout),
+      'transactions': firestore.FieldValue.arrayUnion(userTxCashout),
     });
 
-    await this.txRef.update({ status: TxDefinitions.TxStatus.ACCEPTED });
+    await this.txRef.update({
+      status: TxDefinitions.TxStatus.ACCEPTED,
+      updatedAt: txTimestamp,
+    });
+    await elastic.client.update({
+      id: tx.id,
+      index: elastic.indeces.CASHOUT_INDEX,
+      body: userTxCashout,
+    });
 
     return { status: TxDefinitions.TxStatus.ACCEPTED };
   }

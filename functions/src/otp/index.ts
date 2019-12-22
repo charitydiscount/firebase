@@ -1,14 +1,14 @@
-import { Timestamp, Firestore, FieldValue } from '@google-cloud/firestore';
+import { firestore } from 'firebase-admin';
 import { UserRecord } from 'firebase-functions/lib/providers/auth';
 import * as mail from '../email';
 
 interface Otp {
   code: number;
-  generatedAt: Timestamp | FieldValue;
+  generatedAt: firestore.Timestamp | firestore.FieldValue;
   used: boolean;
 }
 
-export async function handleNewOtp(db: Firestore, user: UserRecord) {
+export async function handleNewOtp(db: firestore.Firestore, user: UserRecord) {
   const code = generateCode();
   try {
     await updateFirestore(db, user.uid, code);
@@ -25,10 +25,14 @@ function generateCode() {
   return Math.floor(1000 + Math.random() * 9000);
 }
 
-function updateFirestore(db: Firestore, userId: string, code: number) {
+function updateFirestore(
+  db: firestore.Firestore,
+  userId: string,
+  code: number,
+) {
   const otp: Otp = {
     code,
-    generatedAt: FieldValue.serverTimestamp(),
+    generatedAt: firestore.FieldValue.serverTimestamp(),
     used: false,
   };
   return db.doc(`otps/${userId}`).set(otp);

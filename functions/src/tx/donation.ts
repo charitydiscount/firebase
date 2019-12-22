@@ -1,32 +1,32 @@
 import * as TxDefinitions from './types';
-import {
-  DocumentReference,
-  Timestamp,
-  FieldValue,
-} from '@google-cloud/firestore';
+import { firestore } from 'firebase-admin';
+import elastic from '../elastic';
 
 export default class DonationHandler implements TxDefinitions.TxHandler {
   private bonusPercentage: number;
-  private walletRef: DocumentReference;
-  private txRef: DocumentReference;
+  private walletRef: firestore.DocumentReference;
+  private txRef: firestore.DocumentReference;
+  private caseRef: firestore.DocumentReference;
 
   constructor(
-    walletRef: DocumentReference,
+    walletRef: firestore.DocumentReference,
     bonusPercentage: number,
-    txRef: DocumentReference
+    txRef: firestore.DocumentReference,
+    caseRef: firestore.DocumentReference,
   ) {
     this.bonusPercentage = bonusPercentage;
     this.walletRef = walletRef;
     this.txRef = txRef;
+    this.caseRef = caseRef;
   }
 
   async process(
-    tx: TxDefinitions.TxRequest
+    tx: TxDefinitions.TxRequest,
   ): Promise<TxDefinitions.ProcessResult> {
-    const txTimestamp = Timestamp.fromDate(new Date());
-    const dueAmount = FieldValue.increment(-tx.amount);
+    const txTimestamp = firestore.Timestamp.fromDate(new Date());
+    const dueAmount = firestore.FieldValue.increment(-tx.amount);
     const generatedPoints = tx.amount * this.bonusPercentage;
-    const duePoints = FieldValue.increment(generatedPoints);
+    const duePoints = firestore.FieldValue.increment(generatedPoints);
 
     const userTxDonation: TxDefinitions.UserTransaction = {
       amount: tx.amount,
@@ -48,10 +48,59 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
     await this.walletRef.update({
       'cashback.approved': dueAmount,
       'points.approved': duePoints,
-      transactions: FieldValue.arrayUnion(userTxDonation, userTxBonus),
+      'transactions': firestore.FieldValue.arrayUnion(
+        userTxDonation,
+        userTxBonus,
+      ),
     });
 
-    await this.txRef.update({ status: TxDefinitions.TxStatus.ACCEPTED });
+    await this.txRef.update({
+      status: TxDefinitions.TxStatus.ACCEPTED,
+      updatedAt: txTimestamp,
+    });
+
+    await this.caseRef.update({
+      funds: firestore.FieldValue.increment(tx.amount),
+    });
+
+    const bulkBody = [
+      {
+        index: {
+          _index: elastic.indeces.DONATIONS_INDEX,
+          _id: userTxDonation.sourceTxId,
+        },
+      },
+      userTxDonation,
+      {
+        index: {
+          _index: elastic.indeces.BONUS_INDEX,
+          _id: userTxBonus.sourceTxId,
+        },
+      },
+      userTxBonus,
+    ];
+    try {
+      const { body: bulkResponse } = await elastic.client.bulk({
+        body: bulkBody,
+      });
+      if (bulkResponse.errors) {
+        const erroredDocuments: any[] = [];
+        bulkResponse.items.forEach((action: any, i: number) => {
+          const operation = Object.keys(action)[0];
+          if (action[operation].error) {
+            erroredDocuments.push({
+              status: action[operation].status,
+              error: action[operation].error,
+              operation: bulkBody[i * 2],
+              document: bulkBody[i * 2 + 1],
+            });
+          }
+        });
+        console.log(erroredDocuments);
+      }
+    } catch (e) {
+      console.log(e);
+    }
 
     return { status: TxDefinitions.TxStatus.ACCEPTED };
   }

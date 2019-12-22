@@ -16,6 +16,23 @@ describe('Charity Discount Functions', () => {
         name: 'Charity Discount Test',
         user: 'test@charitydiscount.ro',
       },
+      elastic: {
+        index_programs: 'programs',
+        index_products: 'products',
+        featured: 'carti',
+        pass: 'testpass',
+        endpoint: 'http://localhost/elasticsearch',
+        user: 'user',
+      },
+      cache: {
+        endpoint: 'localhost:11211',
+        pass: 'test',
+        user: 'test',
+      },
+      twop: {
+        pass: 'test',
+        email: 'charitydiscount@gmail.com',
+      },
     });
   });
 
@@ -48,27 +65,49 @@ describe('Charity Discount Functions', () => {
       return assert.equal(wrappedUpdateOverall(snap), true);
     });
     before(() => {
-      firestoreStub = sinon.stub(admin, 'firestore');
+      const firestoreStub = sinon.stub(admin, 'firestore');
 
       const setStub = sinon.stub();
       setStub
         .withArgs(
           { ratings: { testProgramID: { count: 3, rating: 4 } } },
-          { merge: true }
+          { merge: true },
         )
         .returns(true);
 
       firestoreStub.get(() => {
         return () => {
           return {
-            collection: colName => {
+            collection: (colName) => {
               return {
-                doc: docName => {
+                doc: (docName) => {
                   return {
                     set: setStub,
                   };
                 },
               };
+            },
+          };
+        };
+      });
+
+      const messagingStub = sinon.stub(admin, 'messaging');
+      messagingStub.get(() => {
+        return () => {
+          return {
+            sendToDevice: (deviceToken, notification) => {
+              return true;
+            },
+          };
+        };
+      });
+
+      const storageStub = sinon.stub(admin, 'storage');
+      storageStub.get(() => {
+        return () => {
+          return {
+            bucket: (bucketName) => {
+              return true;
             },
           };
         };

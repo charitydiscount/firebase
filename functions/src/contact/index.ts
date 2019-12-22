@@ -1,16 +1,20 @@
-import {Firestore} from "@google-cloud/firestore";
-import * as mail from "../email";
+import { firestore } from 'firebase-admin';
+import * as mail from '../email';
 
 export interface Contact {
-    name: string,
-    email: string,
-    message: string,
-    subject: string,
-    userId: string
+  name: string;
+  email: string;
+  message: string;
+  subject: string;
+  userId: string;
 }
 
-export async function sendContactMessage(db: Firestore, randomId: string, ct: Contact) {
-    const body = `<!DOCTYPE html>
+export async function sendContactMessage(
+  db: firestore.Firestore,
+  randomId: string,
+  ct: Contact,
+) {
+  const body = `<!DOCTYPE html>
   <html lang="en">
     <head>
       <meta charset="UTF-8" />
@@ -27,13 +31,12 @@ export async function sendContactMessage(db: Firestore, randomId: string, ct: Co
     </body>
   </html>
   `;
-    return mail.sendEmail("charitydiscount@gmail.com", ct.subject, body)
-        .then(
-            () => {
-                console.log("Mail from id:" + randomId + " succesfully sent");
-            }
-        )
-        .catch(() => {
-            console.log("Mail failed to be sent for  id:" + randomId);
-        });
+  return mail
+    .sendEmail('charitydiscount@gmail.com', ct.subject, body)
+    .then(() => {
+      console.log('Mail from id:' + randomId + ' succesfully sent');
+    })
+    .catch(() => {
+      console.log('Mail failed to be sent for  id:' + randomId);
+    });
 }

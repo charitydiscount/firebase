@@ -66,7 +66,10 @@ export const updateWallet = async (
       notification: {
         title: 'Felicitări!🛒',
         body: `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`,
-        clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+      },
+      data: {
+        click_action: 'FLUTTER_NOTIFICATION_CLICK',
+        type: 'COMMISSION',
       },
     };
 
@@ -81,7 +84,10 @@ export const updateWallet = async (
         notification: {
           title: 'Cashback primit!💰',
           body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
-          clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+        },
+        data: {
+          click_action: 'FLUTTER_NOTIFICATION_CLICK',
+          type: 'COMMISSION',
         },
       };
 

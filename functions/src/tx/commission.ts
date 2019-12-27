@@ -45,8 +45,12 @@ export const updateWallet = async (
   const userDevices: string[] = [];
   for await (const tokenRef of userTokenDocs.map((doc) => doc.get())) {
     const device = tokenRef.data();
-    if (device!.notifications === undefined || device!.notifications) {
-      userDevices.push(device!.token);
+    if (
+      device &&
+      (device.notifications === undefined || device.notifications) &&
+      device.token
+    ) {
+      userDevices.push(device.token);
     }
   }
 
@@ -67,7 +71,7 @@ export const updateWallet = async (
     };
 
     userDevices.forEach((deviceToken) =>
-      fcm.sendToDevice(deviceToken, notification),
+      fcm.sendToDevice(deviceToken, notification).catch((e) => console.log(e)),
     );
   });
 

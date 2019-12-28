@@ -5,6 +5,8 @@ import fs = require('fs');
 import csvParse = require('csv-parser');
 import * as entity from '../entities';
 import { ObjectMetadata } from 'firebase-functions/lib/providers/storage';
+import { Commission, toCommissionEntity } from './serializer';
+import { getPendingCommissions } from '../two-performant';
 
 const commissionsBucketName = 'charitydiscount-commissions';
 const commissionsBucket = admin.storage().bucket(commissionsBucketName);
@@ -31,7 +33,7 @@ const updateCommissionFromBucket = async (
     },
     {
       csv: 'Program',
-      target: 'shopId',
+      target: 'programName',
     },
     {
       csv: 'Commission Amount (RON)',
@@ -68,26 +70,26 @@ const updateCommissionFromBucket = async (
 
               return column.target;
             },
-            mapValues: ({ header, index, value }) => {
-              if (header !== 'shopId') {
-                return value;
-              }
-              const program = programs.find((p) => p.name === value);
-              return !!program ? program.id : value;
-            },
           }),
         )
         .on('data', (data) => {
           const { userId, ...rawCommission } = data;
+          const program = programs.find(
+            (p) => p.name === rawCommission.programName,
+          );
           const commission: entity.Commission = {
             amount: Number.parseFloat(rawCommission.amount) * userPercent,
             createdAt: admin.firestore.Timestamp.fromMillis(
               Date.parse(rawCommission.createdAt),
             ),
             currency: 'RON',
-            shopId: rawCommission.shopId,
+            shopId: !!program ? program.id : undefined,
             status: rawCommission.status,
             originId: parseInt(rawCommission.originId),
+            program: {
+              name: rawCommission.programName,
+              logo: !!program ? program.logoPath : undefined,
+            },
           };
           if (rawCommission.reason && Array.isArray(rawCommission.reason)) {
             commission.reason = rawCommission.reason.join(' ');
@@ -125,5 +127,53 @@ const updateCommissionFromBucket = async (
     return;
   }
 };
+
+/**
+ * Update the commissions
+ * @param commissions
+ */
+export async function updateCommissions(db: admin.firestore.Firestore) {
+  const commissions: Commission[] = await getPendingCommissions();
+
+  const meta = await db.doc('meta/2performant').get();
+  const userPercent: number = meta.data()!.percentage || 0.6;
+
+  const userCommissions: {
+    [userId: string]: { [commissionId: number]: entity.Commission };
+  } = {};
+  commissions.forEach((commission) => {
+    const userIdOfCommission = getUserForCommission(commission);
+    userCommissions[userIdOfCommission] = {
+      ...userCommissions[userIdOfCommission],
+      ...{ [commission.id]: toCommissionEntity(commission, userPercent) },
+    };
+  });
+
+  const promises: Promise<any>[] = [];
+  for (const userId in userCommissions) {
+    promises.push(
+      db
+        .collection('commissions')
+        .doc(userId)
+        .set(
+          {
+            userId,
+            ...userCommissions[userId],
+          },
+          { merge: true },
+        ),
+    );
+  }
+
+  return promises;
+}
+
+function getUserForCommission(commission: Commission) {
+  if (!commission.statsTags || commission.statsTags.length === 0) {
+    return '';
+  }
+
+  return commission.statsTags.slice(1, commission.statsTags.length - 1);
+}
 
 export default { commissionsBucketName, updateCommissionFromBucket };

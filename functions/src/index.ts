@@ -21,7 +21,7 @@ import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import { Contact, sendContactMessage } from './contact';
 import searchApp from './search';
-import commissionsUtil from './commissions';
+import commissionsUtil, { updateCommissions } from './commissions';
 import programsApp from './programs';
 import authApp from './auth';
 
@@ -194,3 +194,11 @@ export const programs = functions
   .https.onRequest(programsApp);
 
 export const auth = functions.region('europe-west1').https.onRequest(authApp);
+
+export const updatePendingCommissions = functions
+  .region('europe-west1')
+  .pubsub.schedule('every 12 hours')
+  .timeZone('Europe/Bucharest')
+  .onRun((context: any) => {
+    return updateCommissions(db);
+  });

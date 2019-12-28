@@ -15,3 +15,5 @@ export async function asyncForEach(array: any[], callback: Function) {
     await callback(item);
   }
 }
+
+export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

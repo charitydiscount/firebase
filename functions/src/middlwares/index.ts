@@ -5,7 +5,7 @@ const firebaseAuth = (req: any, res: any, next: any) => {
   if (!req.token) {
     return res.sendStatus(401);
   }
-  admin
+  return admin
     .auth()
     .verifyIdToken(req.token)
     .then((decodedToken) => {

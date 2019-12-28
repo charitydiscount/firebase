@@ -63,44 +63,11 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
       funds: firestore.FieldValue.increment(tx.amount),
     });
 
-    const bulkBody = [
-      {
-        index: {
-          _index: elastic.indeces.DONATIONS_INDEX,
-          _id: userTxDonation.sourceTxId,
-        },
-      },
-      { ...userTxDonation, elasticDate: new Date().toDateString() },
-      {
-        index: {
-          _index: elastic.indeces.BONUS_INDEX,
-          _id: userTxBonus.sourceTxId,
-        },
-      },
-      { ...userTxBonus, elasticDate: new Date().toDateString() },
-    ];
-    try {
-      const { body: bulkResponse } = await elastic.client.bulk({
-        body: bulkBody,
-      });
-      if (bulkResponse.errors) {
-        const erroredDocuments: any[] = [];
-        bulkResponse.items.forEach((action: any, i: number) => {
-          const operation = Object.keys(action)[0];
-          if (action[operation].error) {
-            erroredDocuments.push({
-              status: action[operation].status,
-              error: action[operation].error,
-              operation: bulkBody[i * 2],
-              document: bulkBody[i * 2 + 1],
-            });
-          }
-        });
-        console.log(erroredDocuments);
-      }
-    } catch (e) {
-      console.log(e);
-    }
+    await elastic
+      .sendBulkRequest(
+        elastic.buildBulkBodyForTx([userTxDonation, userTxBonus]),
+      )
+      .catch((e) => console.log(e));
 
     return { status: TxDefinitions.TxStatus.ACCEPTED };
   }

@@ -14,6 +14,7 @@ import { Contact, sendContactMessage } from './contact';
 import searchApp from './search';
 import commissionsUtil from './commissions';
 import programsApp from './programs';
+import authApp from './auth';
 
 /**
  * Create the user wallet document when a new user registers
@@ -182,3 +183,5 @@ export const search = functions
 export const programs = functions
   .region('europe-west1')
   .https.onRequest(programsApp);
+
+export const auth = functions.region('europe-west1').https.onRequest(authApp);

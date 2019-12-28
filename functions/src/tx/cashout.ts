@@ -41,7 +41,7 @@ export default class CashoutHandler implements TxDefinitions.TxHandler {
     await elastic.client.update({
       id: tx.id,
       index: elastic.indeces.CASHOUT_INDEX,
-      body: { ...userTxCashout, elasticDate: new Date() },
+      body: { ...userTxCashout, elasticDate: new Date().toDateString() },
     });
 
     return { status: TxDefinitions.TxStatus.ACCEPTED };

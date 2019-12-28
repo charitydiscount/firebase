@@ -70,14 +70,14 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
           _id: userTxDonation.sourceTxId,
         },
       },
-      { ...userTxDonation, elasticDate: new Date() },
+      { ...userTxDonation, elasticDate: new Date().toDateString() },
       {
         index: {
           _index: elastic.indeces.BONUS_INDEX,
           _id: userTxBonus.sourceTxId,
         },
       },
-      { ...userTxBonus, elasticDate: new Date() },
+      { ...userTxBonus, elasticDate: new Date().toDateString() },
     ];
     try {
       const { body: bulkResponse } = await elastic.client.bulk({

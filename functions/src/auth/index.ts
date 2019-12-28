@@ -20,7 +20,7 @@ app.get('/:route', (req, res) => {
       .createCustomToken(req.userId)
       .then((token) =>
         res.redirect(
-          `https://charitydiscount.ro/${req.params.route}?token=${token}&${req.params.itemKey}=${req.params.itemValue}`,
+          `https://charitydiscount.ro/${req.params.route}?token=${token}&${req.query.itemKey}=${req.query.itemValue}`,
         ),
       )
   );

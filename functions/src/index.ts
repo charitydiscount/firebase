@@ -1,7 +1,16 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
-admin.initializeApp();
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  admin.initializeApp({
+    credential: admin.credential.cert(
+      require(process.env.FIREBASE_SERVICE_ACCOUNT),
+    ),
+    databaseURL: 'https://charitydiscount.firebaseio.com',
+  });
+} else {
+  admin.initializeApp();
+}
 const db = admin.firestore();
 
 import { processTx } from './tx';

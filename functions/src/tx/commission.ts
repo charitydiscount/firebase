@@ -1,5 +1,6 @@
 import { Commission, UserTransaction, TxType } from './types';
 import { messaging, firestore } from 'firebase-admin';
+import { asyncForEach } from '../util';
 
 const fcm = messaging();
 
@@ -61,7 +62,8 @@ export const updateWallet = async (
         (prev) => prev.originId === commission.originId,
       ) === undefined,
   );
-  newPendingCommissions.forEach((commission) => {
+
+  await asyncForEach(newPendingCommissions, async (commission: Commission) => {
     const notification: messaging.MessagingPayload = {
       notification: {
         title: 'Felicitări!🛒',
@@ -73,28 +75,29 @@ export const updateWallet = async (
       },
     };
 
-    userDevices.forEach((deviceToken) =>
-      fcm.sendToDevice(deviceToken, notification).catch((e) => console.log(e)),
-    );
+    await fcm
+      .sendToDevice(userDevices, notification)
+      .catch((e) => console.log(e));
   });
 
   if (unprocessedAcceptedCommissions.length > 0) {
-    unprocessedAcceptedCommissions.forEach((commission) => {
-      const notification: messaging.MessagingPayload = {
-        notification: {
-          title: 'Cashback primit!💰',
-          body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
-        },
-        data: {
-          click_action: 'FLUTTER_NOTIFICATION_CLICK',
-          type: 'COMMISSION',
-        },
-      };
+    await asyncForEach(
+      unprocessedAcceptedCommissions,
+      async (commission: Commission) => {
+        const notification: messaging.MessagingPayload = {
+          notification: {
+            title: 'Cashback primit!💰',
+            body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
+          },
+          data: {
+            click_action: 'FLUTTER_NOTIFICATION_CLICK',
+            type: 'COMMISSION',
+          },
+        };
 
-      userDevices.forEach((deviceToken) =>
-        fcm.sendToDevice(deviceToken, notification),
-      );
-    });
+        await fcm.sendToDevice(userDevices, notification);
+      },
+    );
 
     const newTransactions = getTxFromCommissions(
       unprocessedAcceptedCommissions,

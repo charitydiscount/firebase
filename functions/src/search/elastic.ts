@@ -48,6 +48,9 @@ async function searchProducts(
           multi_match: {
             query,
             fields,
+            fuzziness: 0,
+            operator: 'and',
+            minimum_should_match: '100%',
           },
         },
       },

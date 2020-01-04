@@ -1,6 +1,7 @@
 import * as TxDefinitions from './types';
 import { firestore } from 'firebase-admin';
 import elastic from '../elastic';
+import RejectHandler from './reject';
 
 export default class CashoutHandler implements TxDefinitions.TxHandler {
   private walletRef: firestore.DocumentReference;
@@ -17,6 +18,10 @@ export default class CashoutHandler implements TxDefinitions.TxHandler {
   async process(
     tx: TxDefinitions.TxRequest,
   ): Promise<TxDefinitions.ProcessResult> {
+    if (tx.amount < 50) {
+      return new RejectHandler(this.txRef).process();
+    }
+
     const txTimestamp = firestore.Timestamp.fromDate(new Date());
     const dueAmount = firestore.FieldValue.increment(-tx.amount);
 

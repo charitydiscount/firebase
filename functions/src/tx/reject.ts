@@ -9,7 +9,7 @@ export default class RejectHandler implements TxDefinitions.TxHandler {
   }
 
   async process(
-    tx: TxDefinitions.TxRequest,
+    tx?: TxDefinitions.TxRequest,
   ): Promise<TxDefinitions.ProcessResult> {
     const txTimestamp = firestore.Timestamp.fromDate(new Date());
     await this.txRef.update({

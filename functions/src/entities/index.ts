@@ -4,7 +4,7 @@ export interface Commission {
   amount: number;
   createdAt: firestore.Timestamp;
   currency: string;
-  shopId?: number;
+  shopId: number | null;
   status: string;
   originId: number;
   reason?: string;
@@ -17,7 +17,7 @@ export interface CommissionProgram {
   paymentType?: string;
   status?: string;
   userLogin?: string;
-  logo?: string;
+  logo: string | null;
 }
 
 export const commissionKeys = [

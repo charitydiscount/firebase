@@ -83,12 +83,12 @@ const updateCommissionFromBucket = async (
               Date.parse(rawCommission.createdAt),
             ),
             currency: 'RON',
-            shopId: !!program ? program.id : undefined,
+            shopId: !!program ? program.id : null,
             status: rawCommission.status,
             originId: parseInt(rawCommission.originId),
             program: {
               name: rawCommission.programName,
-              logo: !!program ? program.logoPath : undefined,
+              logo: !!program ? program.logoPath : null,
             },
           };
           if (rawCommission.reason && Array.isArray(rawCommission.reason)) {

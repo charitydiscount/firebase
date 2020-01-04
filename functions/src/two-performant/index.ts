@@ -9,6 +9,7 @@ import {
   Commission,
 } from '../commissions/serializer';
 import { sleep } from '../util';
+import { programsFromJson, toProgramEntity, Program } from './serializers';
 
 let memcache: memjs.Client;
 
@@ -208,7 +209,7 @@ async function getAllEntities(
     authHeaders,
     1,
     localPerPage,
-    options ? options.params : undefined,
+    options !== undefined ? options.params : undefined,
   );
   let entities = responseForPage[relevantKey];
 
@@ -229,7 +230,7 @@ async function getAllEntities(
       authHeaders,
       page,
       localPerPage,
-      options ? options.params : undefined,
+      options !== undefined ? options.params : undefined,
     );
     entities = entities.concat(responseForPage[relevantKey]);
     if (options) {
@@ -245,4 +246,53 @@ async function getAllEntities(
   return entities;
 }
 
-export default { getPromotionsForProgram, getPendingCommissions };
+/**
+ * Get the 2Performant affiliate programs
+ */
+export async function getPrograms() {
+  if (!authHeaders) {
+    authHeaders = await getAuthHeaders();
+  }
+
+  let programs: Program[] = [];
+  try {
+    programs = await getAllEntities(getProgramsForPage, 'programs');
+  } catch (e) {
+    console.log('Failed to read 2p programs: ' + e.message);
+  }
+  return programs.map((twoPP) => {
+    const program = toProgramEntity(twoPP);
+    if (!twoPP.enableLeads) {
+      program.defaultLeadCommissionAmount = null;
+    }
+    if (!twoPP.enableSales) {
+      program.defaultSaleCommissionRate = null;
+    }
+    program.source = '2p';
+    return program;
+  });
+}
+
+async function getProgramsForPage(authData: AuthHeaders, page: number) {
+  const url = `https://api.2performant.com/affiliate/programs?filter[relation]=accepted&page=${page}&perpage=${perPage}`;
+  const twoPResponse = await fetchTwoP(url, authData);
+  const respBody = await twoPResponse.json();
+
+  return programsFromJson(respBody);
+}
+
+export const getAffiliateCodes = () => {
+  return [
+    {
+      platform: '2p',
+      code: authHeaders.uniqueCode,
+    },
+  ];
+};
+
+export default {
+  getPromotionsForProgram,
+  getPendingCommissions,
+  getPrograms,
+  getAffiliateCodes,
+};

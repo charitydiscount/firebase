@@ -24,6 +24,7 @@ import searchApp from './search';
 import commissionsUtil, { updateCommissions } from './commissions';
 import programsApp from './programs';
 import authApp from './auth';
+import { updatePrograms as refreshPrograms } from './programs/program';
 
 /**
  * Create the user wallet document when a new user registers
@@ -201,4 +202,12 @@ export const updatePendingCommissions = functions
   .timeZone('Europe/Bucharest')
   .onRun((context: any) => {
     return updateCommissions(db);
+  });
+
+export const updatePrograms = functions
+  .region('europe-west1')
+  .pubsub.schedule('every 24 hours')
+  .timeZone('Europe/Bucharest')
+  .onRun((context: any) => {
+    return refreshPrograms(db);
   });

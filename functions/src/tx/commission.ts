@@ -63,31 +63,14 @@ export const updateWallet = async (
       ) === undefined,
   );
 
-  await asyncForEach(newPendingCommissions, async (commission: Commission) => {
-    const notification: messaging.MessagingPayload = {
-      notification: {
-        title: 'Felicitări!🛒',
-        body: `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`,
-      },
-      data: {
-        click_action: 'FLUTTER_NOTIFICATION_CLICK',
-        type: 'COMMISSION',
-      },
-    };
-
-    await fcm
-      .sendToDevice(userDevices, notification)
-      .catch((e) => console.log(e));
-  });
-
-  if (unprocessedAcceptedCommissions.length > 0) {
+  if (userDevices.length > 0) {
     await asyncForEach(
-      unprocessedAcceptedCommissions,
+      newPendingCommissions,
       async (commission: Commission) => {
         const notification: messaging.MessagingPayload = {
           notification: {
-            title: 'Cashback primit!💰',
-            body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
+            title: 'Felicitări!🛒',
+            body: `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`,
           },
           data: {
             click_action: 'FLUTTER_NOTIFICATION_CLICK',
@@ -95,9 +78,35 @@ export const updateWallet = async (
           },
         };
 
-        await fcm.sendToDevice(userDevices, notification);
+        await fcm
+          .sendToDevice(userDevices, notification)
+          .catch((e) => console.log(e));
       },
     );
+  }
+
+  if (unprocessedAcceptedCommissions.length > 0) {
+    if (userDevices.length > 0) {
+      await asyncForEach(
+        unprocessedAcceptedCommissions,
+        async (commission: Commission) => {
+          const notification: messaging.MessagingPayload = {
+            notification: {
+              title: 'Cashback primit!💰',
+              body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
+            },
+            data: {
+              click_action: 'FLUTTER_NOTIFICATION_CLICK',
+              type: 'COMMISSION',
+            },
+          };
+
+          await fcm
+            .sendToDevice(userDevices, notification)
+            .catch((e) => console.log(e));
+        },
+      );
+    }
 
     const newTransactions = getTxFromCommissions(
       unprocessedAcceptedCommissions,

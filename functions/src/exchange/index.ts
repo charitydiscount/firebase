@@ -43,9 +43,11 @@ export async function convertAmount(
   }
 
   let targetAmount = amount;
+  const rate =
+    exchangeRates.rates[currency] +
+    (exchangeRates.rates[currency] * config().exchange.fee || 0.02);
   try {
-    targetAmount =
-      amount / (exchangeRates.rates[currency] + config().exchange.fee);
+    targetAmount = amount / rate;
   } catch (error) {
     console.log(`Currency conversion failed: ${error}`);
     // Return the provided amount and use it as it is

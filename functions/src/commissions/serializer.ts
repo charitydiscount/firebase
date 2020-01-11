@@ -1,6 +1,7 @@
 import camelcaseKeys = require('camelcase-keys');
 import * as entity from '../entities';
 import { firestore } from 'firebase-admin';
+import { convertAmount, BASE_CURRENCY } from '../exchange';
 
 export interface CommissionsResponse {
   commissions: Commission[];
@@ -103,18 +104,33 @@ export const commissionsFromJson = (json: any): CommissionsResponse => {
   return camelcaseKeys(json, { deep: true });
 };
 
-export const toCommissionEntity = (
+export const toCommissionEntity = async (
   comm: Commission,
   userPercent: number,
-): entity.Commission => {
+): Promise<entity.Commission> => {
+  const userAmount =
+    Number.parseFloat(comm.amountInWorkingCurrency) * userPercent;
+  let convertedUserAmount = userAmount;
+  let currency = comm.workingCurrencyCode;
+  if (comm.workingCurrencyCode !== BASE_CURRENCY) {
+    const conversionResult = await convertAmount(
+      userAmount,
+      comm.workingCurrencyCode,
+    );
+    convertedUserAmount = conversionResult.amount;
+    currency = conversionResult.currency;
+  }
   const commission: entity.Commission = {
-    amount: Number.parseFloat(comm.amountInWorkingCurrency) * userPercent,
-    createdAt: firestore.Timestamp.fromMillis(Date.parse(comm.createdAt)),
-    currency: comm.workingCurrencyCode,
+    originalAmount: userAmount,
+    amount: convertedUserAmount,
+    originalCurrency: comm.workingCurrencyCode,
+    currency: currency,
     shopId: comm.programId,
     status: comm.status,
     originId: comm.id,
     program: comm.program,
+    createdAt: firestore.Timestamp.fromMillis(Date.parse(comm.createdAt)),
+    updatedAt: firestore.FieldValue.serverTimestamp(),
   };
   if (comm.reason && Array.isArray(comm.reason)) {
     commission.reason = comm.reason.join(' ');

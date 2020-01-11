@@ -7,6 +7,8 @@ import * as entity from '../entities';
 import { ObjectMetadata } from 'firebase-functions/lib/providers/storage';
 import { Commission, toCommissionEntity } from './serializer';
 import { getPendingCommissions } from '../two-performant';
+import { asyncForEach } from '../util';
+import { BASE_CURRENCY } from '../exchange';
 
 const commissionsBucketName = 'charitydiscount-commissions';
 const commissionsBucket = admin.storage().bucket(commissionsBucketName);
@@ -20,12 +22,17 @@ const updateCommissionFromBucket = async (
   await commissionsBucket
     .file(fileName)
     .download({ destination: tempFilePath });
-  const userCommissions = {} as { [userId: string]: entity.Commission[] };
-  const shopsCollection = await db.collection('shops').get();
+
   const meta = await db.doc('meta/2performant').get();
   const userPercent: number = meta.data()!.percentage || 0.6;
+
+  // Get the shops in order to retrieve the shop IDs
   const programs: entity.Program[] = [];
+  const shopsCollection = await db.collection('shops').get();
   shopsCollection.docs.forEach((doc) => programs.push(...doc.data().batch));
+
+  const userCommissions = {} as { [userId: string]: entity.Commission[] };
+
   const relevantColumns = [
     {
       csv: 'ID',
@@ -77,12 +84,15 @@ const updateCommissionFromBucket = async (
           const program = programs.find(
             (p) => p.name === rawCommission.programName,
           );
+
+          // Amounts from CSV are always in RON (already converted)
+          const originalAmount =
+            Number.parseFloat(rawCommission.amount) * userPercent;
           const commission: entity.Commission = {
-            amount: Number.parseFloat(rawCommission.amount) * userPercent,
-            createdAt: admin.firestore.Timestamp.fromMillis(
-              Date.parse(rawCommission.createdAt),
-            ),
-            currency: 'RON',
+            amount: originalAmount,
+            originalAmount: originalAmount,
+            originalCurrency: BASE_CURRENCY,
+            currency: BASE_CURRENCY,
             shopId: !!program ? program.id : null,
             status: rawCommission.status,
             originId: parseInt(rawCommission.originId),
@@ -90,6 +100,10 @@ const updateCommissionFromBucket = async (
               name: rawCommission.programName,
               logo: !!program ? program.logoPath : null,
             },
+            createdAt: admin.firestore.Timestamp.fromMillis(
+              Date.parse(rawCommission.createdAt),
+            ),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           };
           if (rawCommission.reason && Array.isArray(rawCommission.reason)) {
             commission.reason = rawCommission.reason.join(' ');
@@ -141,11 +155,16 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
   const userCommissions: {
     [userId: string]: { [commissionId: number]: entity.Commission };
   } = {};
-  commissions.forEach((commission) => {
+
+  await asyncForEach(commissions, async (commission) => {
     const userIdOfCommission = getUserForCommission(commission);
+    const commissionToBeSaved = await toCommissionEntity(
+      commission,
+      userPercent,
+    );
     userCommissions[userIdOfCommission] = {
       ...userCommissions[userIdOfCommission],
-      ...{ [commission.id]: toCommissionEntity(commission, userPercent) },
+      ...{ [commission.id]: commissionToBeSaved },
     };
   });
 

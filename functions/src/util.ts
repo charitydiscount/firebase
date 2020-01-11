@@ -10,7 +10,7 @@ export function flatMap(f: Function, arr: Array<any>) {
   return arr.reduce((x, y) => [...x, ...f(y)], []);
 }
 
-export async function asyncForEach(array: any[], callback: Function) {
+export async function asyncForEach<T>(array: T[], callback: (item: T) => any) {
   for (const item of array) {
     await callback(item);
   }

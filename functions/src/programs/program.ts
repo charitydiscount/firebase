@@ -1,9 +1,32 @@
 import * as entity from '../entities';
-import { config } from 'firebase-functions';
+import { config, Request, Response } from 'firebase-functions';
 import { firestore } from 'firebase-admin';
 import { getAffiliateCodes, getPrograms } from '../two-performant';
 import elastic from '../elastic';
 import { asyncForEach } from '../util';
+
+export const getAffiliatePrograms = async (req: Request, res: Response) => {
+  const { body } = await elastic.client.search({
+    index: elastic.indeces.PROGRAMS_INDEX,
+    body: {
+      size: 1000,
+      query: {
+        match_all: {},
+      },
+    },
+  });
+
+  return res.json(body.hits.map((hit: any) => hit._source));
+};
+
+export const getAffiliateProgram = async (req: Request, res: Response) => {
+  const { body } = await elastic.client.get({
+    index: elastic.indeces.PROGRAMS_INDEX,
+    id: req.params.programId,
+  });
+
+  return res.json(body._source);
+};
 
 /**
  * Update the stored programs

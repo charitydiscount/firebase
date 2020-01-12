@@ -260,7 +260,7 @@ export async function getPrograms() {
   } catch (e) {
     console.log('Failed to read 2p programs: ' + e.message);
   }
-  return programs.map((twoPP) => {
+  return programs.map((twoPP, index) => {
     const program = toProgramEntity(twoPP);
     if (!twoPP.enableLeads) {
       program.defaultLeadCommissionAmount = null;
@@ -269,6 +269,7 @@ export async function getPrograms() {
       program.defaultSaleCommissionRate = null;
     }
     program.source = '2p';
+    program.order = index * 100;
     return program;
   });
 }

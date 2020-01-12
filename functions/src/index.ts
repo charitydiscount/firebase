@@ -25,6 +25,7 @@ import commissionsUtil, { updateCommissions } from './commissions';
 import programsApp from './programs';
 import authApp from './auth';
 import { updatePrograms as refreshPrograms } from './programs/program';
+import { updatePromotions } from './programs/promotions';
 
 /**
  * Create the user wallet document when a new user registers
@@ -209,5 +210,5 @@ export const updatePrograms = functions
   .pubsub.schedule('every 24 hours')
   .timeZone('Europe/Bucharest')
   .onRun((context: any) => {
-    return refreshPrograms(db);
+    return Promise.all([refreshPrograms(db), updatePromotions(db)]);
   });

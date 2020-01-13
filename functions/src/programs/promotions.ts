@@ -2,7 +2,6 @@ import twoPerformant, { getPromotions } from '../two-performant';
 import { Request, Response } from 'express';
 import { firestore } from 'firebase-admin';
 import { groupBy } from '../util';
-import { WriteResult } from '@google-cloud/firestore';
 
 const getForProgram = (req: Request, res: Response) =>
   twoPerformant
@@ -14,7 +13,7 @@ export const updatePromotions = async (db: firestore.Firestore) => {
 
   const programsPromotions = groupBy(promotions, 'programId');
 
-  const promises: Promise<WriteResult>[] = [];
+  const promises: Promise<any>[] = [];
   for (const programId in programsPromotions) {
     promises.push(
       db

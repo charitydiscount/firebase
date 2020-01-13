@@ -61,42 +61,40 @@ async function getAuthHeaders(): Promise<AuthHeaders> {
 /**
  * Get all 2performant program promotions
  */
-export async function getPromotions(): Promise<Promotion[]> {
-  try {
-    memcache =
-      memcache ||
-      memjs.Client.create(
-        `${config().cache.user}:${config().cache.pass}@${
-          config().cache.endpoint
-        }`,
-      );
+export async function getPromotions(skipCache = false): Promise<Promotion[]> {
+  if (!skipCache) {
+    try {
+      memcache =
+        memcache ||
+        memjs.Client.create(
+          `${config().cache.user}:${config().cache.pass}@${
+            config().cache.endpoint
+          }`,
+        );
 
-    const cachedPromotions = await memcache.get('2p-promotions');
-    if (cachedPromotions.value !== null) {
-      //@ts-ignore
-      return JSON.parse(cachedPromotions.value.toString());
+      const cachedPromotions = await memcache.get('2p-promotions');
+      if (cachedPromotions.value !== null) {
+        //@ts-ignore
+        return JSON.parse(cachedPromotions.value.toString());
+      }
+    } catch (e) {
+      console.log(`Could not connect to memcached: ${e.message}`);
     }
-  } catch (e) {
-    console.log(`Could not connect to memcached: ${e}`);
   }
 
   if (!authHeaders) {
     authHeaders = await getAuthHeaders();
   }
 
-  let promotionData = await get2PPromotionDataForPage(1);
-  const promotions: any[] = promotionData.advertiserPromotions;
-
-  const totalPages = promotionData.pagination.pages;
-  const firstPage = promotionData.pagination.currentPage;
-
-  if (firstPage === totalPages) {
-    return promotions;
-  }
-
-  for (let page = firstPage + 1; page <= totalPages; page++) {
-    promotionData = await get2PPromotionDataForPage(page);
-    promotions.push(...promotionData.advertiserPromotions);
+  let promotions: any[] = [];
+  try {
+    promotions = await getAllEntities(
+      get2PPromotionDataForPage,
+      'advertiserPromotions',
+      { paginationInRoot: true },
+    );
+  } catch (e) {
+    console.log('Failed to read 2p promotions: ' + e.message);
   }
 
   promotions.forEach((p: Promotion) => {
@@ -105,9 +103,11 @@ export async function getPromotions(): Promise<Promotion[]> {
     p.programId = p.program.id;
   });
 
-  await memcache.set('2p-promotions', JSON.stringify(promotions), {
-    expires: 3600,
-  });
+  if (!skipCache && memcache) {
+    await memcache.set('2p-promotions', JSON.stringify(promotions), {
+      expires: 3600,
+    });
+  }
 
   return promotions;
 }
@@ -196,6 +196,7 @@ interface GetterOptions {
   params?: string;
   stopWhen?: Function;
   perPage?: number;
+  paginationInRoot?: boolean;
 }
 
 async function getAllEntities(
@@ -226,8 +227,12 @@ async function getAllEntities(
     }
   }
 
-  const totalPages = responseForPage.metadata.pagination.pages;
-  const firstPage = responseForPage.metadata.pagination.currentPage;
+  const pagination =
+    options && options.paginationInRoot === true
+      ? responseForPage.pagination
+      : responseForPage.metadata.pagination;
+  const totalPages = pagination.pages;
+  const firstPage = pagination.currentPage;
 
   for (let page = firstPage + 1; page <= totalPages; page++) {
     responseForPage = await pageRetriever(

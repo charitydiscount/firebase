@@ -9,8 +9,9 @@ import { Commission, toCommissionEntity } from './serializer';
 import { getPendingCommissions } from '../two-performant';
 import { asyncForEach } from '../util';
 import { BASE_CURRENCY } from '../exchange';
+import { config } from 'firebase-functions';
 
-const commissionsBucketName = 'charitydiscount-commissions';
+const commissionsBucketName = config().platform.commissions_bucket;
 const commissionsBucket = admin.storage().bucket(commissionsBucketName);
 
 const updateCommissionFromBucket = async (

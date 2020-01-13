@@ -51,6 +51,7 @@ export interface Program {
   category: string;
   sellingCountries: SellingCountry[];
   source: string;
+  order: number;
 }
 
 export enum DefaultSaleCommissionType {

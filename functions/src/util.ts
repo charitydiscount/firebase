@@ -34,3 +34,16 @@ export const pick = (
 };
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export const groupBy = <T extends Object>(
+  array: Array<T>,
+  key: string,
+): {
+  [key: string]: T;
+} => {
+  return array.reduce((acc: any, item: T) => {
+    //@ts-ignore
+    (acc[item[key]] = acc[item[key]] || []).push(item);
+    return acc;
+  }, {});
+};

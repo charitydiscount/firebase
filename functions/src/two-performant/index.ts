@@ -61,19 +61,23 @@ async function getAuthHeaders(): Promise<AuthHeaders> {
 /**
  * Get all 2performant program promotions
  */
-async function getPromotions(): Promise<Promotion[]> {
-  if (!memcache) {
-    memcache = memjs.Client.create(
-      `${config().cache.user}:${config().cache.pass}@${
-        config().cache.endpoint
-      }`,
-    );
-  }
+export async function getPromotions(): Promise<Promotion[]> {
+  try {
+    memcache =
+      memcache ||
+      memjs.Client.create(
+        `${config().cache.user}:${config().cache.pass}@${
+          config().cache.endpoint
+        }`,
+      );
 
-  const cachedPromotions = await memcache.get('2p-promotions');
-  if (cachedPromotions.value !== null) {
-    //@ts-ignore
-    return JSON.parse(cachedPromotions.value.toString());
+    const cachedPromotions = await memcache.get('2p-promotions');
+    if (cachedPromotions.value !== null) {
+      //@ts-ignore
+      return JSON.parse(cachedPromotions.value.toString());
+    }
+  } catch (e) {
+    console.log(`Could not connect to memcached: ${e}`);
   }
 
   if (!authHeaders) {
@@ -260,7 +264,7 @@ export async function getPrograms() {
   } catch (e) {
     console.log('Failed to read 2p programs: ' + e.message);
   }
-  return programs.map((twoPP) => {
+  return programs.map((twoPP, index) => {
     const program = toProgramEntity(twoPP);
     if (!twoPP.enableLeads) {
       program.defaultLeadCommissionAmount = null;
@@ -269,6 +273,7 @@ export async function getPrograms() {
       program.defaultSaleCommissionRate = null;
     }
     program.source = '2p';
+    program.order = index * 100;
     return program;
   });
 }

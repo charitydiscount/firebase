@@ -87,7 +87,7 @@ async function searchProducts(
 
   try {
     const { body } = await elastic.client.search({
-      index: elastic.indeces.PRODUCTS_INDEX.index_products,
+      index: elastic.indeces.PRODUCTS_INDEX,
       body: searchBody,
     });
 

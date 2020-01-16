@@ -1,9 +1,9 @@
 import * as entity from '../entities';
-import { config, Request, Response } from 'firebase-functions';
+import { Request, Response } from 'firebase-functions';
 import { firestore } from 'firebase-admin';
 import { getAffiliateCodes, getPrograms } from '../two-performant';
 import elastic from '../elastic';
-import { asyncForEach } from '../util';
+import { asyncForEach, arrayToObject } from '../util';
 
 export const getAffiliatePrograms = async (req: Request, res: Response) => {
   const { body } = await elastic.client.search({
@@ -30,7 +30,7 @@ export const getAffiliateProgram = async (req: Request, res: Response) => {
 
 /**
  * Update the stored programs
- * @param {object[]} programs
+ * @param {Firestore} db Firestore DB reference
  */
 export async function updatePrograms(db: firestore.Firestore) {
   try {
@@ -72,21 +72,16 @@ async function updateProgramsGeneral(
   db: firestore.Firestore,
   programs: entity.Program[],
 ) {
-  try {
-    await deleteDocsOfCollection(db, 'shops');
-  } catch (e) {
-    console.log('Failed to delete general programs');
-  }
-
-  const batchSize = parseInt(config().firestore.programs_batch_size || 50);
-  for (let index = 0; index < programs.length; index += batchSize) {
-    const docPrograms = programs.slice(index, index + batchSize);
-    await db.collection('shops').add({
-      batch: docPrograms,
-      order: index,
-      createdAt: firestore.FieldValue.serverTimestamp(),
-    });
-  }
+  await db
+    .collection('programs')
+    .doc('all')
+    .set(
+      {
+        ...arrayToObject(programs, 'uniqueCode'),
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
 }
 
 async function updateProgramsMeta(
@@ -166,16 +161,4 @@ async function updateAffiliateMeta(
     .collection('meta')
     .doc('2performant')
     .set({ uniqueCode: uniqueCode }, { merge: true });
-}
-
-async function deleteDocsOfCollection(
-  db: firestore.Firestore,
-  collection: string,
-) {
-  const fireBatch = db.batch();
-  const docsToDelete = await db.collection(collection).listDocuments();
-  docsToDelete.forEach((doc: any) => {
-    fireBatch.delete(doc);
-  });
-  return fireBatch.commit();
 }

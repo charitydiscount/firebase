@@ -1,7 +1,7 @@
 import twoPerformant, { getPromotions } from '../two-performant';
 import { Request, Response } from 'express';
 import { firestore } from 'firebase-admin';
-import { groupBy } from '../util';
+import { groupBy, arrayToObject } from '../util';
 
 const getForProgram = (req: Request, res: Response) =>
   twoPerformant
@@ -21,7 +21,7 @@ export const updatePromotions = async (db: firestore.Firestore) => {
         .doc(programId)
         .set(
           {
-            [programsPromotions[programId].id]: programsPromotions[programId],
+            ...arrayToObject(programsPromotions[programId], 'id'),
           },
           { merge: true },
         ),

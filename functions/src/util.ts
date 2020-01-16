@@ -1,3 +1,5 @@
+import { firestore } from 'firebase-admin';
+
 export function objectMap(object: object, mapFn: Function) {
   return Object.keys(object).reduce((result: object, key) => {
     //@ts-ignore
@@ -39,11 +41,35 @@ export const groupBy = <T extends Object>(
   array: Array<T>,
   key: string,
 ): {
-  [key: string]: T;
+  [key: string]: T[];
 } => {
   return array.reduce((acc: any, item: T) => {
     //@ts-ignore
     (acc[item[key]] = acc[item[key]] || []).push(item);
     return acc;
   }, {});
+};
+
+export const arrayToObject = <T>(
+  array: T[],
+  key: string,
+): { [key: string]: T } => {
+  let object: { [key: string]: T } = {};
+  array.forEach((item) => {
+    //@ts-ignore
+    object[item[key]] = item;
+  });
+  return object;
+};
+
+export const deleteDocsOfCollection = async (
+  db: firestore.Firestore,
+  collection: string,
+) => {
+  const fireBatch = db.batch();
+  const docsToDelete = await db.collection(collection).listDocuments();
+  docsToDelete.forEach((doc: any) => {
+    fireBatch.delete(doc);
+  });
+  return fireBatch.commit();
 };

@@ -1,7 +1,7 @@
 import camelcaseKeys = require('camelcase-keys');
 import * as entity from '../entities';
 import { firestore } from 'firebase-admin';
-import { convertAmount, BASE_CURRENCY } from '../exchange';
+import { convertAmount, BASE_CURRENCY, roundAmount } from '../exchange';
 
 export interface CommissionsResponse {
   commissions: Commission[];
@@ -121,8 +121,8 @@ export const toCommissionEntity = async (
     currency = conversionResult.currency;
   }
   const commission: entity.Commission = {
-    originalAmount: userAmount,
-    amount: convertedUserAmount,
+    originalAmount: roundAmount(userAmount),
+    amount: roundAmount(convertedUserAmount),
     originalCurrency: comm.workingCurrencyCode,
     currency: currency,
     shopId: comm.programId,

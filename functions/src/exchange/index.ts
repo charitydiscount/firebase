@@ -62,3 +62,7 @@ export async function convertAmount(
     currency: targetCurrency,
   };
 }
+
+export const roundAmount = (amount: number) => {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+};

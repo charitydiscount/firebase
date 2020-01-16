@@ -54,7 +54,7 @@ export const arrayToObject = <T>(
   array: T[],
   key: string,
 ): { [key: string]: T } => {
-  let object: { [key: string]: T } = {};
+  const object: { [key: string]: T } = {};
   array.forEach((item) => {
     //@ts-ignore
     object[item[key]] = item;

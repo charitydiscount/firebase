@@ -16,7 +16,7 @@ const db = admin.firestore();
 import { processTx } from './tx';
 import { TxStatus, Commission } from './tx/types';
 import { updateProgramRating } from './rating';
-import { createWallet } from './user';
+import { createWallet, createUser } from './user';
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import { Contact, sendContactMessage } from './contact';
@@ -33,14 +33,11 @@ import { updatePromotions as updateProms } from './programs/promotions';
 export const handleNewUser = functions
   .region('europe-west1')
   .auth.user()
-  .onCreate(async (user: functions.auth.UserRecord) => {
-    try {
-      return await createWallet(db, user);
-    } catch (e) {
-      console.log(e.message);
-      return undefined;
-    }
-  });
+  .onCreate((user: functions.auth.UserRecord) =>
+    Promise.all([createUser(db, user), createWallet(db, user)]).catch((e) =>
+      console.log(e.message),
+    ),
+  );
 
 /**
  * Process the donation/cashout request

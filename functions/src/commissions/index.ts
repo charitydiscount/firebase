@@ -29,8 +29,17 @@ const updateCommissionFromBucket = async (
 
   // Get the shops in order to retrieve the shop IDs
   const programs: entity.Program[] = [];
-  const shopsCollection = await db.collection('shops').get();
-  shopsCollection.docs.forEach((doc) => programs.push(...doc.data().batch));
+  const programsSnap = await db
+    .collection('programs')
+    .doc('all')
+    .get();
+  const programsData = <entity.ProgramSnapshot>programsSnap.data();
+
+  for (const uniqueCode in programsData) {
+    if (programsData.hasOwnProperty(uniqueCode) && uniqueCode !== 'updatedAt') {
+      programs.push(programsData[uniqueCode]);
+    }
+  }
 
   const userCommissions = {} as { [userId: string]: entity.Commission[] };
 

@@ -54,6 +54,14 @@ export interface Program {
   order: number;
 }
 
+interface ProgramSnapProperty {
+  [uniqueCode: string]: Program;
+}
+
+export type ProgramSnapshot = ProgramSnapProperty & {
+  updatedAt: firestore.Timestamp;
+};
+
 export enum DefaultSaleCommissionType {
   Percent = 'percent',
   Variable = 'variable',

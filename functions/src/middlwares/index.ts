@@ -46,7 +46,22 @@ const corsOptions: cors.CorsOptions = {
 
 const corsMw = cors(corsOptions);
 
+const adminMw = async (req: any, res: any, next: any) => {
+  const userRolesSnap = await admin
+    .firestore()
+    .collection('roles')
+    .doc(req.userId)
+    .get();
+
+  if (userRolesSnap.exists && userRolesSnap.data()?.admin === true) {
+    return next();
+  } else {
+    return res.sendStatus(401);
+  }
+};
+
 export default {
   corsMw,
   firebaseAuth,
+  adminMw,
 };

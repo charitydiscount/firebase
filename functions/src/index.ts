@@ -26,6 +26,7 @@ import programsApp from './programs';
 import authApp from './auth';
 import { updatePrograms as refreshPrograms } from './programs/program';
 import { updatePromotions as updateProms } from './programs/promotions';
+import adminApp from './admin';
 
 /**
  * Create the user wallet document when a new user registers
@@ -213,3 +214,7 @@ export const updatePromotions = functions
   .pubsub.schedule('every 12 hours')
   .timeZone('Europe/Bucharest')
   .onRun((context: any) => updateProms(db));
+
+export const manage = functions
+  .region('europe-west1')
+  .https.onRequest(adminApp);

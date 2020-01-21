@@ -15,6 +15,7 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@elastic/elasticsearch": "^7.5.0",
     "body-parser": "^1.19.0",
     "camelcase-keys": "^6.1.1",
     "cors": "^2.8.5",
@@ -31,7 +32,6 @@
     "uuid": "^3.4.0"
   },
   "devDependencies": {
-    "@elastic/elasticsearch": "^7.5.0",
     "@types/cors": "^2.8.6",
     "@types/helmet": "0.0.45",
     "@types/memjs": "^1.2.1",

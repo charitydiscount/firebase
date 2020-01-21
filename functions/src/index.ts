@@ -195,7 +195,7 @@ export const programs = functions
 
 export const auth = functions.region('europe-west1').https.onRequest(authApp);
 
-export const updatePendingCommissions = functions
+export const updateCommissionsFromApi = functions
   .region('europe-west1')
   .pubsub.schedule('every 12 hours')
   .timeZone('Europe/Bucharest')

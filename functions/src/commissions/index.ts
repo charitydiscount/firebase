@@ -6,7 +6,7 @@ import csvParse = require('csv-parser');
 import * as entity from '../entities';
 import { ObjectMetadata } from 'firebase-functions/lib/providers/storage';
 import { Commission, toCommissionEntity } from './serializer';
-import { getPendingCommissions } from '../two-performant';
+import { getCommissions } from '../two-performant';
 import { asyncForEach } from '../util';
 import { BASE_CURRENCY } from '../exchange';
 import { config } from 'firebase-functions';
@@ -157,7 +157,7 @@ const updateCommissionFromBucket = async (
  * @param commissions
  */
 export async function updateCommissions(db: admin.firestore.Firestore) {
-  const commissions: Commission[] = await getPendingCommissions();
+  const commissions: Commission[] = await getCommissions();
 
   const meta = await db.doc('meta/2performant').get();
   const userPercent: number = meta.data()!.percentage || 0.6;

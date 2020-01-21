@@ -137,19 +137,19 @@ async function get2PPromotionDataForPage(page: number): Promise<any> {
 /**
  * Get the 2Performant affiliate commissions
  */
-export async function getPendingCommissions(): Promise<Commission[]> {
+export async function getCommissions(): Promise<Commission[]> {
   const commissions = await getAllEntities(
     getCommissionsForPage,
     'commissions',
     {
       perPage: 50,
-      params: '&filter[status]=pending&sort[date]=desc',
+      // params: '&filter[status]=pending&sort[date]=desc',
     },
   );
   commissions.push(
     ...(await getAllEntities(getCommissionsForPage, 'commissions', {
       perPage: 50,
-      params: 'filter[status]=accepted&sort[date]=desc',
+      // params: 'filter[status]=accepted&sort[date]=desc',
     })),
   );
   return commissions;
@@ -302,7 +302,7 @@ export const getAffiliateCodes = () => {
 
 export default {
   getPromotionsForProgram,
-  getPendingCommissions,
+  getCommissions,
   getPrograms,
   getAffiliateCodes,
 };

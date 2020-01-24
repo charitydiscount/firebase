@@ -197,7 +197,7 @@ export const auth = functions.region('europe-west1').https.onRequest(authApp);
 
 export const updateCommissionsFromApi = functions
   .region('europe-west1')
-  .pubsub.schedule('every 12 hours')
+  .pubsub.schedule('every 10 minutes')
   .timeZone('Europe/Bucharest')
   .onRun((context: any) => {
     return updateCommissions(db);

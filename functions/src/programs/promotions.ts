@@ -9,7 +9,7 @@ const getForProgram = (req: Request, res: Response) =>
     .then((promotions) => res.json(promotions));
 
 export const updatePromotions = async (db: firestore.Firestore) => {
-  const promotions = await getPromotions(true);
+  const promotions = await getPromotions();
 
   const programsPromotions = groupBy(promotions, 'programId');
 

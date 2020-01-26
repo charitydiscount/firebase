@@ -2,7 +2,6 @@ import { config } from 'firebase-functions';
 import fetch = require('node-fetch');
 import camelcaseKeys = require('camelcase-keys');
 import { Promotion } from '../entities';
-import memjs = require('memjs');
 import {
   CommissionsResponse,
   commissionsFromJson,
@@ -10,8 +9,6 @@ import {
 } from '../commissions/serializer';
 import { sleep } from '../util';
 import { programsFromJson, toProgramEntity, Program } from './serializers';
-
-let memcache: memjs.Client;
 
 interface AuthHeaders {
   accessToken: string;
@@ -61,27 +58,7 @@ async function getAuthHeaders(): Promise<AuthHeaders> {
 /**
  * Get all 2performant program promotions
  */
-export async function getPromotions(skipCache = false): Promise<Promotion[]> {
-  if (!skipCache) {
-    try {
-      memcache =
-        memcache ||
-        memjs.Client.create(
-          `${config().cache.user}:${config().cache.pass}@${
-            config().cache.endpoint
-          }`,
-        );
-
-      const cachedPromotions = await memcache.get('2p-promotions');
-      if (cachedPromotions.value !== null) {
-        //@ts-ignore
-        return JSON.parse(cachedPromotions.value.toString());
-      }
-    } catch (e) {
-      console.log(`Could not connect to memcached: ${e.message}`);
-    }
-  }
-
+export async function getPromotions(): Promise<Promotion[]> {
   if (!authHeaders) {
     authHeaders = await getAuthHeaders();
   }
@@ -102,12 +79,6 @@ export async function getPromotions(skipCache = false): Promise<Promotion[]> {
     // @ts-ignore
     p.programId = p.program.id;
   });
-
-  if (!skipCache && memcache) {
-    await memcache.set('2p-promotions', JSON.stringify(promotions), {
-      expires: 3600,
-    });
-  }
 
   return promotions;
 }

@@ -45,7 +45,10 @@ const createProgram = async (req: Request, res: Response) => {
     .collection('programs')
     .doc('all')
     .set(
-      { [programId]: { ...req.body, uniqueCode: programId, id: programId } },
+      {
+        [programId]: { ...req.body, uniqueCode: programId, id: programId },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
       { merge: true },
     );
   return res.json({ uniqueCode: programId });
@@ -64,6 +67,7 @@ const updateProgram = (req: Request, res: Response) =>
     .set(
       {
         [req.params.programUniqueCode]: req.body,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
       { merge: true },
     )

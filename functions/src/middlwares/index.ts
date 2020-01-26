@@ -1,5 +1,6 @@
 import * as admin from 'firebase-admin';
 import cors = require('cors');
+import { Request, Response, NextFunction } from 'express';
 
 const firebaseAuth = (req: any, res: any, next: any) => {
   if (!req.token) {
@@ -60,8 +61,18 @@ const adminMw = async (req: any, res: any, next: any) => {
   }
 };
 
+export const onlyDevEnv = (req: Request, res: Response, next: NextFunction) => {
+  if (admin.instanceId().app.options.projectId === 'charitydiscount-test') {
+    next();
+    return;
+  } else {
+    return res.sendStatus(403);
+  }
+};
+
 export default {
   corsMw,
   firebaseAuth,
   adminMw,
+  onlyDevEnv,
 };

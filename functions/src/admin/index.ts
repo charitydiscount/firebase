@@ -5,6 +5,7 @@ import middlewares from '../middlwares';
 import bodyParser = require('body-parser');
 import programsController from './programs';
 import commissionsController from './commissions';
+import casesController from './cases';
 
 const app = express();
 
@@ -42,5 +43,11 @@ app.put(
   '/user/:userId/commissions/:commissionId',
   commissionsController.updateUserCommission,
 );
+
+// Charity cases endpoints
+app.get('/cases', casesController.getCases);
+app.get('/cases/:caseId', casesController.getCase);
+app.post('/cases', casesController.createCase);
+app.put('/cases/:caseId', casesController.updateCase);
 
 export default app;

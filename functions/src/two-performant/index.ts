@@ -9,6 +9,7 @@ import {
 } from '../commissions/serializer';
 import { sleep } from '../util';
 import { programsFromJson, toProgramEntity, Program } from './serializers';
+import { response } from 'express';
 
 interface AuthHeaders {
   accessToken: string;
@@ -63,7 +64,7 @@ export async function getPromotions(): Promise<Promotion[]> {
     authHeaders = await getAuthHeaders();
   }
 
-  let promotions: any[] = [];
+  let promotions: Promotion[] = [];
   try {
     promotions = await getAllEntities(
       get2PPromotionDataForPage,
@@ -109,24 +110,14 @@ async function get2PPromotionDataForPage(page: number): Promise<any> {
  * Get the 2Performant affiliate commissions
  */
 export async function getCommissions(): Promise<Commission[]> {
-  const commissions = await getAllEntities(
+  const commissions = await getAllEntities<Commission>(
     getCommissionsForPage,
     'commissions',
-    {
-      perPage: 50,
-      // params: '&filter[status]=pending&sort[date]=desc',
-    },
-  );
-  commissions.push(
-    ...(await getAllEntities(getCommissionsForPage, 'commissions', {
-      perPage: 50,
-      // params: 'filter[status]=accepted&sort[date]=desc',
-    })),
   );
   return commissions;
 }
 
-function fetchTwoP(url: string, authData: AuthHeaders) {
+async function fetchTwoP(url: string, authData: AuthHeaders) {
   const headers = {
     'access-token': authData.accessToken,
     'client': authData.client,
@@ -135,10 +126,16 @@ function fetchTwoP(url: string, authData: AuthHeaders) {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
-  return fetch.default(url, {
+  const twoPResponse = await fetch.default(url, {
     method: 'get',
     headers,
   });
+
+  if (twoPResponse.status !== 200) {
+    console.log(`2P fetch failed: ${twoPResponse.statusText}`);
+  }
+
+  return twoPResponse;
 }
 
 async function getCommissionsForPage(
@@ -170,11 +167,11 @@ interface GetterOptions {
   paginationInRoot?: boolean;
 }
 
-async function getAllEntities(
+async function getAllEntities<T>(
   pageRetriever: Function,
   relevantKey: string,
   options?: GetterOptions,
-): Promise<any[]> {
+): Promise<T[]> {
   if (!authHeaders) {
     authHeaders = await getAuthHeaders();
   }
@@ -187,6 +184,12 @@ async function getAllEntities(
     localPerPage,
     options !== undefined ? options.params : undefined,
   );
+
+  if (!response) {
+    console.log(`Empty response for ${relevantKey}`);
+    return [];
+  }
+
   let entities = responseForPage[relevantKey];
 
   if (options) {

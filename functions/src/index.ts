@@ -195,9 +195,14 @@ export const programs = functions
 
 export const auth = functions.region('europe-west1').https.onRequest(authApp);
 
+const commissionsInterval =
+  admin.instanceId().app.options.projectId === 'charitydiscount-test'
+    ? '2 hours'
+    : '10 minutes';
+
 export const updateCommissionsFromApi = functions
   .region('europe-west1')
-  .pubsub.schedule('every 10 minutes')
+  .pubsub.schedule(`every ${commissionsInterval}`)
   .timeZone('Europe/Bucharest')
   .onRun((context: any) => {
     return updateCommissions(db);

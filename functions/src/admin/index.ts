@@ -49,5 +49,6 @@ app.get('/cases', casesController.getCases);
 app.get('/cases/:caseId', casesController.getCase);
 app.post('/cases', casesController.createCase);
 app.put('/cases/:caseId', casesController.updateCase);
+app.delete('/cases/:caseId', casesController.deleteCase);
 
 export default app;

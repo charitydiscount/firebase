@@ -13,7 +13,11 @@ const getCases = (req: Request, res: Response) =>
     .collection('cases')
     .get()
     .then((querySnap) =>
-      res.json(querySnap.docs.map((docSnap) => docSnap.data())),
+      res.json(
+        querySnap.docs.map((docSnap) => {
+          return { ...docSnap.data(), id: docSnap.id };
+        }),
+      ),
     );
 
 /**
@@ -31,7 +35,12 @@ const getCase = (req: Request, res: Response) =>
         return res.sendStatus(404);
       }
 
-      return res.json(caseSnap.data() || {});
+      const snapData = caseSnap.data();
+      if (!snapData) {
+        return {};
+      }
+
+      return res.json({ ...snapData, id: caseSnap.id });
     });
 
 /**
@@ -51,16 +60,29 @@ const createCase = async (req: Request, res: Response) =>
  *            and case document ID in params
  * @param res Express response
  */
-const updateCase = (req: Request, res: Response) =>
+const updateCase = (req: Request, res: Response) => {
+  const caseRef = _db.collection('cases').doc(req.params.caseId);
+  const { funds, id, ...updatedCase } = req.body;
+  return caseRef
+    .set(updatedCase, { merge: true })
+    .then(() => res.sendStatus(200));
+};
+
+/**
+ * Delete a charity case
+ * @param req Express request with case document ID in params
+ * @param res Express response
+ */
+const deleteCase = (req: Request, res: Response) =>
   _db
     .collection('cases')
     .doc(req.params.caseId)
-    .set(req.body, { merge: true })
-    .then(() => res.sendStatus(200));
+    .delete();
 
 export default {
   getCases,
   getCase,
   createCase,
   updateCase,
+  deleteCase,
 };

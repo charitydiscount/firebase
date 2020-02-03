@@ -9,7 +9,6 @@ import {
 } from '../commissions/serializer';
 import { sleep } from '../util';
 import { programsFromJson, toProgramEntity, Program } from './serializers';
-import { response } from 'express';
 
 interface AuthHeaders {
   accessToken: string;
@@ -60,10 +59,6 @@ async function getAuthHeaders(): Promise<AuthHeaders> {
  * Get all 2performant program promotions
  */
 export async function getPromotions(): Promise<Promotion[]> {
-  if (!authHeaders) {
-    authHeaders = await getAuthHeaders();
-  }
-
   let promotions: Promotion[] = [];
   try {
     promotions = await getAllEntities(
@@ -154,6 +149,8 @@ async function getCommissionsForPage(
       commissionsPerPage,
       params,
     );
+  } else if (twoPResponse.status !== 200) {
+    throw twoPResponse.statusText;
   } else {
     const respBody = await twoPResponse.json();
     return commissionsFromJson(respBody);
@@ -178,16 +175,16 @@ async function getAllEntities<T>(
 
   const localPerPage = options && options.perPage ? options.perPage : perPage;
 
-  let responseForPage = await pageRetriever(
-    authHeaders,
-    1,
-    localPerPage,
-    options !== undefined ? options.params : undefined,
-  );
-
-  if (!response) {
-    console.log(`Empty response for ${relevantKey}`);
-    return [];
+  let responseForPage;
+  try {
+    responseForPage = await pageRetriever(
+      authHeaders,
+      1,
+      localPerPage,
+      options !== undefined ? options.params : undefined,
+    );
+  } catch (e) {
+    authHeaders = await getAuthHeaders();
   }
 
   let entities = responseForPage[relevantKey];
@@ -205,6 +202,7 @@ async function getAllEntities<T>(
     options && options.paginationInRoot === true
       ? responseForPage.pagination
       : responseForPage.metadata.pagination;
+
   const totalPages = pagination.pages;
   const firstPage = pagination.currentPage;
 
@@ -233,10 +231,6 @@ async function getAllEntities<T>(
  * Get the 2Performant affiliate programs
  */
 export async function getPrograms() {
-  if (!authHeaders) {
-    authHeaders = await getAuthHeaders();
-  }
-
   let programs: Program[] = [];
   try {
     programs = await getAllEntities(getProgramsForPage, 'programs');

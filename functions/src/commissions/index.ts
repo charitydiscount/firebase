@@ -166,16 +166,47 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     [userId: string]: { [commissionId: number]: entity.Commission };
   } = {};
 
+  const currentCommissions: {
+    [userId: string]: { [commissionId: number]: entity.Commission } | null;
+  } = {};
+
   await asyncForEach(commissions, async (commission) => {
     const userIdOfCommission = getUserForCommission(commission);
     const commissionToBeSaved = await toCommissionEntity(
       commission,
       userPercent,
     );
-    userCommissions[userIdOfCommission] = {
-      ...userCommissions[userIdOfCommission],
-      ...{ [commission.id]: commissionToBeSaved },
-    };
+
+    if (currentCommissions[userIdOfCommission] === undefined) {
+      const userCommSnap = await getCurrentUserCommissions(
+        db,
+        userIdOfCommission,
+      );
+      if (!userCommSnap.exists) {
+        currentCommissions[userIdOfCommission] = null;
+      } else {
+        const snapData = userCommSnap.data();
+        if (snapData) {
+          currentCommissions[userIdOfCommission] = snapData;
+        } else {
+          currentCommissions[userIdOfCommission] = null;
+        }
+      }
+    }
+
+    const currentUserCommissions = currentCommissions[userIdOfCommission];
+    if (
+      currentUserCommissions === undefined ||
+      currentUserCommissions === null ||
+      !currentUserCommissions[commission.id] ||
+      currentUserCommissions[commission.id].updatedAt !==
+        commissionToBeSaved.updatedAt
+    ) {
+      userCommissions[userIdOfCommission] = {
+        ...userCommissions[userIdOfCommission],
+        ...{ [commission.id]: commissionToBeSaved },
+      };
+    }
   });
 
   const promises: Promise<any>[] = [];
@@ -196,6 +227,15 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
 
   return promises;
 }
+
+const getCurrentUserCommissions = (
+  db: admin.firestore.Firestore,
+  userId: string,
+) =>
+  db
+    .collection('commissions')
+    .doc(userId)
+    .get();
 
 function getUserForCommission(commission: Commission) {
   if (!commission.statsTags || commission.statsTags.length === 0) {

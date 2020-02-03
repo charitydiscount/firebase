@@ -130,7 +130,7 @@ export const toCommissionEntity = async (
     originId: comm.id,
     program: comm.program,
     createdAt: firestore.Timestamp.fromMillis(Date.parse(comm.createdAt)),
-    updatedAt: firestore.FieldValue.serverTimestamp(),
+    updatedAt: firestore.Timestamp.fromMillis(Date.parse(comm.updatedAt)),
   };
   if (comm.reason && Array.isArray(comm.reason)) {
     commission.reason = comm.reason.join(' ');

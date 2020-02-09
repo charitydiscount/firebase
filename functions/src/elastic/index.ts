@@ -3,22 +3,33 @@ import { config } from 'firebase-functions';
 import { UserTransaction, TxType } from '../tx/types';
 import { Program } from '../entities';
 import { flatMap } from '../util';
+import admin = require('firebase-admin');
 
 const elasticConfig = config().elastic;
 
 const client: Client = new Client({
   node: elasticConfig.endpoint,
+  auth: {
+    username: elasticConfig.user,
+    password: elasticConfig.pass,
+  },
 });
 
 const indeces = {
-  PROGRAMS_INDEX: elasticConfig.index_programs,
-  PRODUCTS_INDEX: elasticConfig.index_products,
-  FEATURED_CATEGORY: elasticConfig.featured,
-  COMMISSIONS_INDEX: 'tx-in-commissions',
-  DONATIONS_INDEX: 'tx-out-donations',
-  CASHOUT_INDEX: 'tx-out-cashout',
-  BONUS_INDEX: 'tx-bonus',
+  PROGRAMS_INDEX: addEnvPrefix(elasticConfig.index_programs),
+  PRODUCTS_INDEX: addEnvPrefix(elasticConfig.index_products),
+  FEATURED_CATEGORY: addEnvPrefix(elasticConfig.featured),
+  COMMISSIONS_INDEX: addEnvPrefix('tx-in-commissions'),
+  DONATIONS_INDEX: addEnvPrefix('tx-out-donations'),
+  CASHOUT_INDEX: addEnvPrefix('tx-out-cashout'),
+  BONUS_INDEX: addEnvPrefix('tx-bonus'),
 };
+
+function addEnvPrefix(string: string) {
+  const isDev =
+    admin.instanceId().app.options.projectId === 'charitydiscount-test';
+  return isDev ? `dev-${string}` : string;
+}
 
 async function sendBulkRequest(body: any) {
   try {

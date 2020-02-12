@@ -2,8 +2,7 @@ import { Client } from '@elastic/elasticsearch';
 import { config } from 'firebase-functions';
 import { UserTransaction, TxType } from '../tx/types';
 import { Program } from '../entities';
-import { flatMap } from '../util';
-import admin = require('firebase-admin');
+import { flatMap, isDev } from '../util';
 
 const elasticConfig = config().elastic;
 
@@ -17,7 +16,7 @@ const client: Client = new Client({
 
 const indeces = {
   PROGRAMS_INDEX: addEnvPrefix(elasticConfig.index_programs),
-  PRODUCTS_INDEX: addEnvPrefix(elasticConfig.index_products),
+  PRODUCTS_INDEX: elasticConfig.index_products,
   FEATURED_CATEGORY: addEnvPrefix(elasticConfig.featured),
   COMMISSIONS_INDEX: addEnvPrefix('tx-in-commissions'),
   DONATIONS_INDEX: addEnvPrefix('tx-out-donations'),
@@ -26,8 +25,6 @@ const indeces = {
 };
 
 function addEnvPrefix(string: string) {
-  const isDev =
-    admin.instanceId().app.options.projectId === 'charitydiscount-test';
   return isDev ? `dev-${string}` : string;
 }
 

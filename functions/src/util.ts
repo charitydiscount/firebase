@@ -1,4 +1,4 @@
-import { firestore } from 'firebase-admin';
+import { firestore, instanceId } from 'firebase-admin';
 
 export function objectMap(object: object, mapFn: Function) {
   return Object.keys(object).reduce((result: object, key) => {
@@ -73,3 +73,6 @@ export const deleteDocsOfCollection = async (
   });
   return fireBatch.commit();
 };
+
+export const isDev =
+  instanceId().app.options.projectId === 'charitydiscount-test';

@@ -37,9 +37,7 @@ export async function updatePrograms(db: firestore.Firestore) {
     const programs = await getPrograms();
     await updateProgramsGeneral(db, programs);
     await updateFavoritePrograms(db, programs);
-
-    const twoPCode = getAffiliateCodes()[0].code;
-    await updateMeta(db, twoPCode, programs);
+    await updateMeta(db, programs);
 
     await elastic
       .sendBulkRequest(elastic.buildBulkBodyForPrograms(programs))
@@ -55,16 +53,14 @@ export async function updatePrograms(db: firestore.Firestore) {
 /**
  * Update the overall metrics
  */
-async function updateMeta(
-  db: firestore.Firestore,
-  uniqueCode: string,
-  programs: entity.Program[],
-) {
+async function updateMeta(db: firestore.Firestore, programs: entity.Program[]) {
   if (!Array.isArray(programs)) {
     return;
   }
 
-  await updateAffiliateMeta(db, uniqueCode);
+  const twoPCode = getAffiliateCodes()[0].code;
+
+  await updateAffiliateMeta(db, twoPCode);
   await updateProgramsMeta(db, programs);
 }
 

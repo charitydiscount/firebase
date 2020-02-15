@@ -1,15 +1,10 @@
-import twoPerformant, { getPromotions } from '../two-performant';
-import { Request, Response } from 'express';
+import { getPromotions } from '../two-performant';
 import { firestore } from 'firebase-admin';
 import { groupBy, arrayToObject } from '../util';
 
-const getForProgram = (req: Request, res: Response) =>
-  twoPerformant
-    .getPromotionsForProgram(parseInt(req.params.programId))
-    .then((promotions) => res.json(promotions));
-
 export const updatePromotions = async (db: firestore.Firestore) => {
-  const promotions = await getPromotions();
+  const meta = await db.doc('meta/2performant').get();
+  const promotions = await getPromotions(meta.data()!.uniqueCode);
 
   const programsPromotions = groupBy(promotions, 'programId');
 
@@ -30,5 +25,3 @@ export const updatePromotions = async (db: firestore.Firestore) => {
 
   return Promise.all(promises);
 };
-
-export default { getForProgram };

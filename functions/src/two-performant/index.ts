@@ -7,7 +7,11 @@ import {
   commissionsFromJson,
   Commission,
 } from '../commissions/serializer';
-import { sleep } from '../util';
+import {
+  sleep,
+  USER_LINK_PLACEHOLDER,
+  PROGRAM_LINK_PLACEHOLDER,
+} from '../util';
 import { programsFromJson, toProgramEntity, Program } from './serializers';
 
 interface AuthHeaders {
@@ -58,7 +62,9 @@ async function getAuthHeaders(): Promise<AuthHeaders> {
 /**
  * Get all 2performant program promotions
  */
-export async function getPromotions(): Promise<Promotion[]> {
+export async function getPromotions(
+  affiliateCode: string,
+): Promise<Promotion[]> {
   let promotions: Promotion[] = [];
   try {
     promotions = await getAllEntities(
@@ -74,24 +80,10 @@ export async function getPromotions(): Promise<Promotion[]> {
     p.source = '2p';
     // @ts-ignore
     p.programId = p.program.id;
+    p.affiliateUrl = buildAffiliateUrl(affiliateCode, p.landingPageLink);
   });
 
   return promotions;
-}
-
-/**
- * Get promotions for the given affiliate program
- * @param programId Affiliate Program ID
- */
-async function getPromotionsForProgram(
-  programId: number,
-): Promise<Promotion[]> {
-  if (!authHeaders) {
-    authHeaders = await getAuthHeaders();
-  }
-
-  const promotions = await getPromotions();
-  return promotions.filter((p: any) => p.programId === programId);
 }
 
 async function get2PPromotionDataForPage(page: number): Promise<any> {
@@ -237,6 +229,7 @@ export async function getPrograms() {
   } catch (e) {
     console.log('Failed to read 2p programs: ' + e.message);
   }
+  const twoPCode = getAffiliateCodes()[0].code;
   return programs.map((twoPP, index) => {
     const program = toProgramEntity(twoPP);
     if (!twoPP.enableLeads) {
@@ -247,6 +240,8 @@ export async function getPrograms() {
     }
     program.source = '2p';
     program.order = index * 100;
+    program.affiliateUrl = buildAffiliateUrl(twoPCode, program.mainUrl);
+
     return program;
   });
 }
@@ -268,8 +263,17 @@ export const getAffiliateCodes = () => {
   ];
 };
 
+const buildAffiliateUrl = (affiliateCode: string, redirectUrl: string) => {
+  const baseUrl =
+    'https://event.2performant.com/events/click?ad_type=quicklink';
+  const affCode = `aff_code=${affiliateCode}`;
+  const unique = `unique=${PROGRAM_LINK_PLACEHOLDER}`;
+  const redirect = `redirect_to=${redirectUrl}`;
+  const tag = `st=${USER_LINK_PLACEHOLDER}`;
+  return `${baseUrl}&${affCode}&${unique}&${redirect}&${tag}`;
+};
+
 export default {
-  getPromotionsForProgram,
   getCommissions,
   getPrograms,
   getAffiliateCodes,

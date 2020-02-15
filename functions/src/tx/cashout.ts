@@ -32,6 +32,7 @@ export default class CashoutHandler implements TxDefinitions.TxHandler {
       type: TxDefinitions.TxType.CASHOUT,
       sourceTxId: tx.id,
       target: tx.target,
+      userId: tx.userId,
     };
 
     await this.walletRef.update({

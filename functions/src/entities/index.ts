@@ -37,6 +37,7 @@ export interface Program {
   id: number;
   name: string;
   mainUrl: string;
+  affiliateUrl: string;
   uniqueCode: string;
   status: string;
   productsCount: number;
@@ -77,6 +78,7 @@ export const programKeys = [
   'id',
   'name',
   'mainUrl',
+  'affiliateUrl',
   'uniqueCode',
   'status',
   'productsCount',
@@ -102,6 +104,7 @@ export interface Promotion {
   promotionEnd: Date;
   landingPageLink: string;
   source: string;
+  affiliateUrl: string;
 }
 
 export interface Reviewer {

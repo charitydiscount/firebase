@@ -35,6 +35,7 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
       type: TxDefinitions.TxType.DONATION,
       sourceTxId: tx.id,
       target: tx.target,
+      userId: tx.userId,
     };
     const userTxBonus: TxDefinitions.UserTransaction = {
       amount: generatedPoints,
@@ -43,6 +44,7 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
       type: TxDefinitions.TxType.BONUS,
       sourceTxId: tx.id,
       target: tx.target,
+      userId: tx.userId,
     };
 
     await this.walletRef.update({

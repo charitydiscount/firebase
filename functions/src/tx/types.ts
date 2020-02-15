@@ -36,6 +36,7 @@ export interface UserTransaction {
   type: TxType;
   sourceTxId: string;
   target: string;
+  userId: string;
 }
 
 export interface Commission {

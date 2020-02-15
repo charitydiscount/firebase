@@ -76,3 +76,6 @@ export const deleteDocsOfCollection = async (
 
 export const isDev =
   instanceId().app.options.projectId === 'charitydiscount-test';
+
+export const USER_LINK_PLACEHOLDER = '{userId}';
+export const PROGRAM_LINK_PLACEHOLDER = '{programUniqueCode}';

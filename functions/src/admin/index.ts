@@ -6,6 +6,8 @@ import bodyParser = require('body-parser');
 import programsController from './programs';
 import commissionsController from './commissions';
 import casesController from './cases';
+import donationsController from './donations';
+import cashoutController from './cashout';
 
 const app = express();
 
@@ -50,5 +52,17 @@ app.get('/cases/:caseId', casesController.getCase);
 app.post('/cases', casesController.createCase);
 app.put('/cases/:caseId', casesController.updateCase);
 app.delete('/cases/:caseId', casesController.deleteCase);
+
+// Donations endpoints
+app.get('/donations', donationsController.getDonations);
+app.get('/donations/user/:userId', donationsController.getUserDonations);
+app.post('/donations', donationsController.createDonation);
+app.put('/donations/:txId', donationsController.updateDonation);
+
+// Cashout endpoints
+app.get('/cashout', cashoutController.getWithdrawals);
+app.get('/cashout/user/:userId', cashoutController.getUserWithdrawals);
+app.post('/cashout', cashoutController.createWithdrawal);
+app.put('/cashout/:txId/', cashoutController.updateWithdrawal);
 
 export default app;

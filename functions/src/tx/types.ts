@@ -12,6 +12,7 @@ export enum TxStatus {
   REJECTED = 'REJECTED',
   PENDING = 'PENDING',
   ERROR = 'ERROR',
+  PAID = 'PAID',
 }
 
 export interface ProcessResult {

@@ -1,9 +1,5 @@
 import { Request, Response } from 'express';
-import {
-  getTransactionRequests,
-  updateTransactionRequest,
-  createTransactionRequest,
-} from './tx';
+import { getTransactionRequests, updateTransactionRequest } from './tx';
 import { TxType } from '../tx/types';
 
 /**
@@ -30,12 +26,8 @@ export const getUserWithdrawals = (req: Request, res: Response) =>
 export const updateWithdrawal = (req: Request, res: Response) =>
   updateTransactionRequest(res, req.params.txId, req.body);
 
-export const createWithdrawal = (req: Request, res: Response) =>
-  createTransactionRequest(res, req.body);
-
 export default {
   getWithdrawals,
   getUserWithdrawals,
   updateWithdrawal,
-  createWithdrawal,
 };

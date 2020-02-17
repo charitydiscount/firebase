@@ -56,13 +56,11 @@ app.delete('/cases/:caseId', casesController.deleteCase);
 // Donations endpoints
 app.get('/donations', donationsController.getDonations);
 app.get('/donations/user/:userId', donationsController.getUserDonations);
-app.post('/donations', donationsController.createDonation);
 app.put('/donations/:txId', donationsController.updateDonation);
 
 // Cashout endpoints
 app.get('/cashout', cashoutController.getWithdrawals);
 app.get('/cashout/user/:userId', cashoutController.getUserWithdrawals);
-app.post('/cashout', cashoutController.createWithdrawal);
 app.put('/cashout/:txId/', cashoutController.updateWithdrawal);
 
 export default app;

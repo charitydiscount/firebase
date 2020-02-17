@@ -1,9 +1,5 @@
 import { Request, Response } from 'express';
-import {
-  getTransactionRequests,
-  updateTransactionRequest,
-  createTransactionRequest,
-} from './tx';
+import { getTransactionRequests, updateTransactionRequest } from './tx';
 import { TxType } from '../tx/types';
 
 /**
@@ -30,12 +26,8 @@ export const getUserDonations = (req: Request, res: Response) =>
 export const updateDonation = (req: Request, res: Response) =>
   updateTransactionRequest(res, req.params.txId, req.body);
 
-export const createDonation = (req: Request, res: Response) =>
-  createTransactionRequest(res, req.body);
-
 export default {
   getDonations,
   getUserDonations,
   updateDonation,
-  createDonation,
 };

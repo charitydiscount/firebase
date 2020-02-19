@@ -90,6 +90,7 @@ async function get2PPromotionDataForPage(page: number): Promise<any> {
   const url = `https://api.2performant.com/affiliate/advertiser_promotions?filter[affrequest_status]=accepted&page=${page}&perpage=${perPage}`;
   const twoPResponse = await fetchTwoP(url, authHeaders);
   const respBody = await twoPResponse.json();
+  authHeaders.accessToken = twoPResponse.headers.get('access-token') || '';
   return camelcaseKeys(respBody, { deep: true });
 }
 
@@ -145,6 +146,7 @@ async function getCommissionsForPage(
     throw twoPResponse.statusText;
   } else {
     const respBody = await twoPResponse.json();
+    authHeaders.accessToken = twoPResponse.headers.get('access-token') || '';
     return commissionsFromJson(respBody);
   }
 }
@@ -250,7 +252,7 @@ async function getProgramsForPage(authData: AuthHeaders, page: number) {
   const url = `https://api.2performant.com/affiliate/programs?filter[relation]=accepted&page=${page}&perpage=${perPage}`;
   const twoPResponse = await fetchTwoP(url, authData);
   const respBody = await twoPResponse.json();
-
+  authHeaders.accessToken = twoPResponse.headers.get('access-token') || '';
   return programsFromJson(respBody);
 }
 

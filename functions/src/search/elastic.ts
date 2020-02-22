@@ -134,7 +134,7 @@ async function search(
 
 const featured = () => {
   return searchProducts(elastic.indeces.FEATURED_CATEGORY || 'iarna', {
-    fields: ['category'],
+    fields: ['title'],
   });
 };
 

@@ -20,6 +20,10 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://charitydiscount.ro',
   'https://charitydiscount.github.io',
+  'https://charitydiscount-test.web.app',
+  'https://admin.charitydiscount.ro',
+  'https://admin-charitydiscount.web.app',
+  'https://admin-charitydiscount-test.web.app',
 ];
 const corsOptions: cors.CorsOptions = {
   optionsSuccessStatus: 200,

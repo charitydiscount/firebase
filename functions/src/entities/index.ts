@@ -142,3 +142,9 @@ export interface CharityCase {
   images: CaseImage[];
   funds?: number;
 }
+
+export interface UserAccount {
+  iban: string;
+  name: string;
+  nickname?: string;
+}

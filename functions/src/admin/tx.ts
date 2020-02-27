@@ -2,6 +2,8 @@ import * as admin from 'firebase-admin';
 import { TxType, TxRequest, TxStatus } from '../tx/types';
 import { Response } from 'express';
 import { CheckResult, checkObjectWithProperties } from '../checks';
+import { UserAccount } from '../entities';
+import { asyncForEach } from '../util';
 
 const _db = admin.firestore();
 
@@ -14,7 +16,7 @@ export const isValidTxStatus = (status: String) =>
     TxStatus.ERROR,
   ].find((supportedStatus) => supportedStatus === status.toUpperCase());
 
-export const getTransactionRequests = (
+export const getTransactionRequests = async (
   response: Response,
   type: TxType,
   status?: string,
@@ -33,11 +35,46 @@ export const getTransactionRequests = (
     query = query.where('userId', '==', userId);
   }
 
-  return query
-    .get()
-    .then((querySnap) =>
-      response.json(querySnap.docs.map((snap) => snap.data())),
-    );
+  const userAccounts: { [userId: string]: UserAccount[] } = {};
+
+  const snaps = await query.get();
+  const result: any[] = [];
+  await asyncForEach(snaps.docs, async (doc) => {
+    const txRequestData = doc.data() as TxRequest;
+    if (txRequestData.type === TxType.CASHOUT) {
+      if (!userAccounts[txRequestData.userId]) {
+        // Cache the user bank accounts
+        const accountsRef = await _db
+          .collection('users')
+          .doc(txRequestData.userId)
+          .collection('accounts')
+          .get();
+        userAccounts[txRequestData.userId] = accountsRef.docs.map(
+          (accountDoc) => accountDoc.data() as UserAccount,
+        );
+      }
+
+      if (txRequestData.target === txRequestData.userId) {
+        result.push({
+          ...txRequestData,
+          id: doc.id,
+          account: userAccounts[txRequestData.userId][0],
+        });
+      } else {
+        result.push({
+          ...txRequestData,
+          id: doc.id,
+          account: userAccounts[txRequestData.userId].find(
+            (account) => account.iban === txRequestData.target,
+          ),
+        });
+      }
+    } else {
+      result.push({ ...txRequestData, id: doc.id });
+    }
+  });
+
+  return response.json(result);
 };
 
 export const updateTransactionRequest = (

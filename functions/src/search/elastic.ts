@@ -1,4 +1,4 @@
-import elastic from '../elastic';
+import elastic, { getElasticClient } from '../elastic';
 
 /**
  * Search the programs index based on the provied query (simple search term)
@@ -86,7 +86,7 @@ async function searchProducts(
   }
 
   try {
-    const { body } = await elastic.client.search({
+    const { body } = await getElasticClient().search({
       index: elastic.indeces.PRODUCTS_INDEX,
       body: searchBody,
     });
@@ -111,7 +111,7 @@ async function search(
   field: string,
 ) {
   try {
-    const { body } = await elastic.client.search({
+    const { body } = await getElasticClient().search({
       index,
       body: {
         from: 0,

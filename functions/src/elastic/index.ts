@@ -6,13 +6,21 @@ import { flatMap, isDev } from '../util';
 
 const elasticConfig = config().elastic;
 
-const client: Client = new Client({
-  node: elasticConfig.endpoint,
-  auth: {
-    username: elasticConfig.user,
-    password: elasticConfig.pass,
-  },
-});
+let _client: Client;
+
+export const getElasticClient = () => {
+  if (!_client) {
+    _client = new Client({
+      node: elasticConfig.endpoint,
+      auth: {
+        username: elasticConfig.user,
+        password: elasticConfig.pass,
+      },
+    });
+  }
+
+  return _client;
+};
 
 const indeces = {
   PROGRAMS_INDEX: addEnvPrefix(elasticConfig.index_programs),
@@ -30,7 +38,7 @@ function addEnvPrefix(string: string) {
 
 async function sendBulkRequest(body: any) {
   try {
-    const { body: bulkResponse } = await client.bulk({
+    const { body: bulkResponse } = await getElasticClient().bulk({
       body,
     });
     if (bulkResponse.errors) {
@@ -97,7 +105,6 @@ function getIndexForTx(transaction: UserTransaction) {
 }
 
 export default {
-  client,
   indeces,
   sendBulkRequest,
   buildBulkBodyForTx,

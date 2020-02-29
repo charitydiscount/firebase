@@ -2,11 +2,11 @@ import * as entity from '../entities';
 import { Request, Response } from 'firebase-functions';
 import { firestore } from 'firebase-admin';
 import { getAffiliateCodes, getPrograms } from '../two-performant';
-import elastic from '../elastic';
+import elastic, { getElasticClient } from '../elastic';
 import { asyncForEach, arrayToObject } from '../util';
 
 export const getAffiliatePrograms = async (req: Request, res: Response) => {
-  const { body } = await elastic.client.search({
+  const { body } = await getElasticClient().search({
     index: elastic.indeces.PROGRAMS_INDEX,
     body: {
       size: 1000,
@@ -20,7 +20,7 @@ export const getAffiliatePrograms = async (req: Request, res: Response) => {
 };
 
 export const getAffiliateProgram = async (req: Request, res: Response) => {
-  const { body } = await elastic.client.get({
+  const { body } = await getElasticClient().get({
     index: elastic.indeces.PROGRAMS_INDEX,
     id: req.params.programId,
   });

@@ -64,6 +64,7 @@ export const updateTransactionRequest = (
     .doc(txId)
     .update({
       status: txData.status,
+      target: txData.target,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     })
     .then(() => res.sendStatus(200));

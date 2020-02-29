@@ -34,7 +34,13 @@ export const getAffiliateProgram = async (req: Request, res: Response) => {
  */
 export async function updatePrograms(db: firestore.Firestore) {
   try {
-    const programs = await getPrograms();
+    const newPrograms = await getPrograms();
+    const currentPrograms = await getCurrentPrograms(db);
+    const programs = await getProgramsIncludingRemoved(
+      db,
+      newPrograms,
+      currentPrograms,
+    );
     await updateProgramsGeneral(db, programs);
     await updateFavoritePrograms(db, programs);
     await updateMeta(db, programs);
@@ -48,6 +54,48 @@ export async function updatePrograms(db: firestore.Firestore) {
     console.log('Error updating programs: ' + error);
     return;
   }
+}
+
+const getCurrentPrograms = async (
+  db: firestore.Firestore,
+): Promise<{ [uniqueCode: string]: entity.Program }> => {
+  const currentSnap = await db
+    .collection('programs')
+    .doc('all')
+    .get();
+  if (!currentSnap.exists) {
+    return {};
+  }
+  const { updatedAt, ...programs } = currentSnap.data() || {};
+  return programs;
+};
+
+async function getProgramsIncludingRemoved(
+  db: firestore.Firestore,
+  programs: entity.Program[],
+  currentPrograms: { [uniqueCode: string]: entity.Program },
+): Promise<entity.Program[]> {
+  const currentSnap = await db
+    .collection('programs')
+    .doc('all')
+    .get();
+  if (!currentSnap.exists) {
+    return programs;
+  }
+  const result = programs.slice();
+  Object.keys(currentPrograms).forEach((programUniqueCode) => {
+    const currentProgram = currentPrograms[programUniqueCode];
+    if (
+      currentProgram.source === '2p' &&
+      !programs.find(
+        (newProgram) => newProgram.uniqueCode === currentProgram.uniqueCode,
+      )
+    ) {
+      result.push({ ...currentProgram, status: 'removed' });
+    }
+  });
+
+  return result;
 }
 
 /**
@@ -120,11 +168,14 @@ async function updateFavoritePrograms(
   await asyncForEach(
     querySnaps.docs,
     async (q: firestore.QueryDocumentSnapshot) => {
-      const favoritePrograms = q.data().programs;
+      const userFavoritePrograms = q.data().programs;
+      if (!userFavoritePrograms) {
+        return;
+      }
 
       let updateNeeded = false;
-      Object.keys(favoritePrograms).forEach((programUniqueCode) => {
-        const favProgram = favoritePrograms[programUniqueCode];
+      Object.keys(userFavoritePrograms).forEach((programUniqueCode) => {
+        const favProgram = userFavoritePrograms[programUniqueCode];
         const program = programs.find(
           (p) => p.uniqueCode === favProgram.uniqueCode,
         );
@@ -139,7 +190,7 @@ async function updateFavoritePrograms(
       if (updateNeeded) {
         try {
           await q.ref.update({
-            programs: favoritePrograms,
+            programs: userFavoritePrograms,
           });
         } catch (e) {
           console.log(`Failed favorite program update: ${e.message}`);

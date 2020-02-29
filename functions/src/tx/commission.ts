@@ -140,8 +140,9 @@ const getTxFromCommissions = (
       currency: comm.currency,
       date: comm.createdAt,
       sourceTxId: comm.originId.toString(),
-      target: userId,
+      target: { id: userId, name: comm.shopId.toString() },
       type: TxType.COMMISSION,
+      userId: userId,
     };
   });
 };

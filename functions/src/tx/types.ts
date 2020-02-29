@@ -26,8 +26,13 @@ export interface TxRequest {
   currency: string;
   userId: string;
   createdAt: firestore.Timestamp;
-  target: string;
+  target: TxTarget;
   status: TxStatus;
+}
+
+export interface TxTarget {
+  id: string;
+  name: string;
 }
 
 export interface UserTransaction {
@@ -36,7 +41,7 @@ export interface UserTransaction {
   date: firestore.Timestamp | firestore.FieldValue;
   type: TxType;
   sourceTxId: string;
-  target: string;
+  target: TxTarget;
   userId: string;
 }
 

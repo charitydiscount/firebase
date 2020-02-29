@@ -60,7 +60,7 @@ async function getTxHandler(
     case TxDefinitions.TxType.DONATION:
       const meta = await db.doc('meta/2performant').get();
       const bonusPercentage = meta.data()!.bonusPercentage || 0;
-      const caseRef = db.collection('cases').doc(tx.target);
+      const caseRef = db.collection('cases').doc(tx.target.id);
       return new DonationHandler(walletRef, bonusPercentage, txRef, caseRef);
     case TxDefinitions.TxType.CASHOUT:
       return new CashoutHandler(walletRef, txRef);

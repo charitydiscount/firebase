@@ -62,7 +62,10 @@ export const processTransaction = functions
         currency: tx.currency,
         userId: tx.userId,
         createdAt: tx.createdAt,
-        target: tx.target,
+        target:
+          typeof tx.target === 'string'
+            ? { id: tx.target, name: '' }
+            : tx.target,
         status: tx.status,
       },
       snap.ref,

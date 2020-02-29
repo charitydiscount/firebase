@@ -43,7 +43,7 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
       date: txTimestamp,
       type: TxDefinitions.TxType.BONUS,
       sourceTxId: tx.id,
-      target: tx.target,
+      target: { id: tx.userId, name: '' },
       userId: tx.userId,
     };
 

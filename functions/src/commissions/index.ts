@@ -24,7 +24,7 @@ const updateCommissionFromBucket = async (
     .file(fileName)
     .download({ destination: tempFilePath });
 
-  const meta = await db.doc('meta/2performant').get();
+  const meta = await db.doc('meta/general').get();
   const userPercent: number = meta.data()!.percentage || 0.6;
 
   // Get the shops in order to retrieve the shop IDs
@@ -114,6 +114,7 @@ const updateCommissionFromBucket = async (
               Date.parse(rawCommission.createdAt),
             ),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            source: '2p',
           };
           if (rawCommission.reason && Array.isArray(rawCommission.reason)) {
             commission.reason = rawCommission.reason.join(' ');
@@ -159,7 +160,7 @@ const updateCommissionFromBucket = async (
 export async function updateCommissions(db: admin.firestore.Firestore) {
   const commissions: Commission[] = await getCommissions();
 
-  const meta = await db.doc('meta/2performant').get();
+  const meta = await db.doc('meta/general').get();
   const userPercent: number = meta.data()!.percentage || 0.6;
 
   const userCommissions: {

@@ -102,6 +102,7 @@ export async function getCommissions(): Promise<Commission[]> {
     getCommissionsForPage,
     'commissions',
   );
+  commissions.forEach((c) => (c.source = '2p'));
   return commissions;
 }
 

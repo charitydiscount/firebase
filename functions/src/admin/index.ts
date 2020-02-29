@@ -39,7 +39,7 @@ app.get(
 );
 app.post(
   '/user/:userId/commissions',
-  commissionsController.updateUserCommission,
+  commissionsController.createUserCommission,
 );
 app.put(
   '/user/:userId/commissions/:commissionId',

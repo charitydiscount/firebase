@@ -29,6 +29,7 @@ export interface Commission {
   program: CommissionProgram;
   publicActionData: PublicActionData;
   publicClickData: PublicClickData;
+  source: string;
 }
 
 export interface CommissionProgram {
@@ -121,7 +122,9 @@ export const toCommissionEntity = async (
     currency = conversionResult.currency;
   }
   const commission: entity.Commission = {
-    originalAmount: roundAmount(userAmount),
+    originalAmount: roundAmount(
+      Number.parseFloat(comm.amountInWorkingCurrency),
+    ),
     amount: roundAmount(convertedUserAmount),
     originalCurrency: comm.workingCurrencyCode,
     currency: currency,
@@ -131,6 +134,7 @@ export const toCommissionEntity = async (
     program: comm.program,
     createdAt: firestore.Timestamp.fromMillis(Date.parse(comm.createdAt)),
     updatedAt: firestore.Timestamp.fromMillis(Date.parse(comm.updatedAt)),
+    source: comm.source,
   };
   if (comm.reason && Array.isArray(comm.reason)) {
     commission.reason = comm.reason.join(' ');

@@ -58,7 +58,7 @@ async function getTxHandler(
 
   switch (tx.type) {
     case TxDefinitions.TxType.DONATION:
-      const meta = await db.doc('meta/2performant').get();
+      const meta = await db.doc('meta/general').get();
       const bonusPercentage = meta.data()!.bonusPercentage || 0;
       const caseRef = db.collection('cases').doc(tx.target.id);
       return new DonationHandler(walletRef, bonusPercentage, txRef, caseRef);

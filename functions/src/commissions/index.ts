@@ -199,8 +199,10 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
       currentUserCommissions === undefined ||
       currentUserCommissions === null ||
       !currentUserCommissions[commission.id] ||
-      currentUserCommissions[commission.id].updatedAt !==
-        commissionToBeSaved.updatedAt
+      !currentUserCommissions[commission.id].updatedAt.isEqual(
+        //@ts-ignore
+        commissionToBeSaved.updatedAt,
+      )
     ) {
       userCommissions[userIdOfCommission] = {
         ...userCommissions[userIdOfCommission],

@@ -44,7 +44,7 @@ export const getCommissionsOfUser = (req: Request, res: Response) =>
 export const createUserCommission = async (req: Request, res: Response) => {
   const validationResult = validateNewCommission(req.body);
   if (!validationResult.isValid) {
-    return res.json(validationResult.violations);
+    return res.json(validationResult.violations).status(422);
   }
 
   const meta = await _db.doc('meta/general').get();
@@ -97,7 +97,7 @@ export const createUserCommission = async (req: Request, res: Response) => {
 export const updateUserCommission = async (req: Request, res: Response) => {
   const validationResult = validateCommission(req.body);
   if (!validationResult.isValid) {
-    return res.json(validationResult.violations);
+    return res.json(validationResult.violations).status(422);
   }
 
   const saveResult = await _db
@@ -133,7 +133,7 @@ const validateNewCommission = (data: any): CheckResult => {
 
   return checkObjectWithProperties(data['program'], [
     { key: 'name', type: 'string' },
-    { key: 'logo', type: 'object' },
+    { key: 'logo', type: 'string' },
     { key: 'slug', type: 'string', optional: true },
     { key: 'paymentType', type: 'string', optional: true },
     { key: 'status', type: 'string', optional: true },

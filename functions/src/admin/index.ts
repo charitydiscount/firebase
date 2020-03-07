@@ -8,6 +8,7 @@ import commissionsController from './commissions';
 import casesController from './cases';
 import donationsController from './donations';
 import cashoutController from './cashout';
+import messagesController from './message';
 
 const app = express();
 
@@ -62,5 +63,8 @@ app.put('/donations/:txId', donationsController.updateDonation);
 app.get('/cashout', cashoutController.getWithdrawals);
 app.get('/cashout/user/:userId', cashoutController.getUserWithdrawals);
 app.put('/cashout/:txId/', cashoutController.updateWithdrawal);
+
+// Messages endpoints
+app.get('/messages', messagesController.getMessages);
 
 export default app;

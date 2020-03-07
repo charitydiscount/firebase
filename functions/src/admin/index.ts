@@ -66,6 +66,6 @@ app.put('/cashout/:txId/', cashoutController.updateWithdrawal);
 
 // Messages endpoints
 app.get('/messages', messagesController.getMessages);
-app.put('/message/:id', messagesController.updateMessage);
+app.put('/messages/:id', messagesController.updateMessage);
 
 export default app;

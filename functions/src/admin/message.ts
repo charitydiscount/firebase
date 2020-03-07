@@ -23,23 +23,26 @@ const getMessages = (req: Request, res: Response) =>
 
 /**
  * Update an existing message
- * @param req Express request with message in body
- *            and program ID in params
+ * @param req Express request with message status in the body
+ *            and message ID in params
  * @param res Express response
  */
-// const updateMessage = (req: Request, res: Response) =>
-//     _db
-//         .collection('contact')
-//         .doc('all')
-//         .set(
-//             {
-//                 [req.params.programUniqueCode]: req.body,
-//                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-//             },
-//             { merge: true },
-//         )
-//         .then(() => res.sendStatus(200));
+const updateMessage = (req: Request, res: Response) => {
+    if (!req.body.id || !req.body.status || req.body.status !== 'UPDATED') {
+        return res.sendStatus(401);
+    }
+
+    return _db
+        .collection('requests')
+        .doc(req.params.id)
+        .update({
+            status: req.body.status
+        })
+        .then(() => res.sendStatus(200));
+
+};
 
 export default {
-    getMessages
+    getMessages,
+    updateMessage
 };

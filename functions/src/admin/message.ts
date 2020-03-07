@@ -28,7 +28,7 @@ const getMessages = (req: Request, res: Response) =>
  * @param res Express response
  */
 const updateMessage = (req: Request, res: Response) => {
-    if (!req.body.id || !req.body.status || req.body.status !== 'UPDATED') {
+    if (!req.params.id || !req.body.status) {
         return res.sendStatus(401);
     }
 

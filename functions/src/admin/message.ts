@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import * as admin from "firebase-admin";
+import { Request, Response } from 'express';
+import * as admin from 'firebase-admin';
 
 const _db = admin.firestore();
 
@@ -10,16 +10,16 @@ const _db = admin.firestore();
  * @param res Express response
  */
 const getMessages = (req: Request, res: Response) =>
-    _db
-        .collection('contact')
-        .get()
-        .then((querySnap) =>
-            res.json(
-                querySnap.docs.map((docSnap) => {
-                    return { ...docSnap.data(), id: docSnap.id };
-                }),
-            ),
-        );
+  _db
+    .collection('contact')
+    .get()
+    .then((querySnap) =>
+      res.json(
+        querySnap.docs.map((docSnap) => {
+          return { ...docSnap.data(), id: docSnap.id };
+        }),
+      ),
+    );
 
 /**
  * Update an existing message
@@ -28,21 +28,20 @@ const getMessages = (req: Request, res: Response) =>
  * @param res Express response
  */
 const updateMessage = (req: Request, res: Response) => {
-    if (!req.params.meId || !req.body.status) {
-        return res.sendStatus(401);
-    }
+  if (!req.params.meId || !req.body.status) {
+    return res.sendStatus(401);
+  }
 
-    return _db
-        .collection('contact')
-        .doc(req.params.meId)
-        .update({
-            status: req.body.status
-        })
-        .then(() => res.sendStatus(200));
-
+  return _db
+    .collection('contact')
+    .doc(req.params.meId)
+    .update({
+      status: req.body.status,
+    })
+    .then(() => res.sendStatus(200));
 };
 
 export default {
-    getMessages,
-    updateMessage
+  getMessages,
+  updateMessage,
 };

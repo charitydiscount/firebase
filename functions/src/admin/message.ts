@@ -28,13 +28,13 @@ const getMessages = (req: Request, res: Response) =>
  * @param res Express response
  */
 const updateMessage = (req: Request, res: Response) => {
-    if (!req.params.id || !req.body.status) {
+    if (!req.params.meId || !req.body.status) {
         return res.sendStatus(401);
     }
 
     return _db
-        .collection('requests')
-        .doc(req.params.id)
+        .collection('contact')
+        .doc(req.params.meId)
         .update({
             status: req.body.status
         })

@@ -19,7 +19,7 @@ app.use(helmet());
 app.use(bearerToken());
 
 // Limit the admin api only to development environment until stable
-app.use(middlewares.onlyDevEnv);
+//app.use(middlewares.onlyDevEnv);
 
 app.use(middlewares.firebaseAuth);
 app.use(middlewares.adminMw);

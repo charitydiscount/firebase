@@ -72,7 +72,12 @@ function buildBulkBodyForTx(transactions: UserTransaction[]) {
             _id: t.sourceTxId,
           },
         },
-        { ...t, elasticDate: new Date().toDateString() },
+        {
+          ...t,
+          target: t.target.id,
+          targetName: t.target.name,
+          elasticDate: new Date().toDateString(),
+        },
       ],
     );
   });

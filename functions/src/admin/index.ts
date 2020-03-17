@@ -8,6 +8,7 @@ import commissionsController from './commissions';
 import casesController from './cases';
 import donationsController from './donations';
 import cashoutController from './cashout';
+import messagesController from './message';
 
 const app = express();
 
@@ -18,7 +19,7 @@ app.use(helmet());
 app.use(bearerToken());
 
 // Limit the admin api only to development environment until stable
-app.use(middlewares.onlyDevEnv);
+//app.use(middlewares.onlyDevEnv);
 
 app.use(middlewares.firebaseAuth);
 app.use(middlewares.adminMw);
@@ -62,5 +63,9 @@ app.put('/donations/:txId', donationsController.updateDonation);
 app.get('/cashout', cashoutController.getWithdrawals);
 app.get('/cashout/user/:userId', cashoutController.getUserWithdrawals);
 app.put('/cashout/:txId/', cashoutController.updateWithdrawal);
+
+// Messages endpoints
+app.get('/messages', messagesController.getMessages);
+app.put('/messages/:meId', messagesController.updateMessage);
 
 export default app;

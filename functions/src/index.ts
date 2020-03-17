@@ -19,7 +19,6 @@ import { updateProgramRating } from './rating';
 import { createWallet, createUser } from './user';
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
-import { Contact, sendContactMessage } from './contact';
 import searchApp from './search';
 import commissionsUtil, { updateCommissions } from './commissions';
 import programsApp from './programs';
@@ -180,13 +179,6 @@ export const updateCommissionsFromStorage = functions
   .onFinalize((object) =>
     commissionsUtil.updateCommissionFromBucket(db, object),
   );
-
-export const sendContactMail = functions
-  .region('europe-west1')
-  .firestore.document('contact/{randomId}')
-  .onCreate((snap, context) => {
-    return sendContactMessage(db, snap.id, snap.data() as Contact);
-  });
 
 export const search = functions
   .region('europe-west1')

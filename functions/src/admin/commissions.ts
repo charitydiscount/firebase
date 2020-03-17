@@ -48,7 +48,7 @@ export const createUserCommission = async (req: Request, res: Response) => {
   }
 
   const meta = await _db.doc('meta/general').get();
-  const userPercent: number = meta.data()!.percentage || 0.6;
+  const userPercent: number = meta.data()!.userPercentage || 0.6;
 
   let userAmount = req.body.originalAmount * userPercent;
   let currency = req.body.originalCurrency;
@@ -72,6 +72,8 @@ export const createUserCommission = async (req: Request, res: Response) => {
     updatedAt: admin.firestore.Timestamp.fromMillis(Date.now()),
   };
 
+  console.log(`New commission: ${newUserCommission.originId}`);
+
   const saveResult = await _db
     .collection('commissions')
     .doc(req.params.userId)
@@ -85,6 +87,8 @@ export const createUserCommission = async (req: Request, res: Response) => {
       },
       { merge: true },
     );
+
+  console.log(saveResult.writeTime);
   return res.json(saveResult.writeTime);
 };
 

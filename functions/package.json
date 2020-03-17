@@ -15,18 +15,18 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "@elastic/elasticsearch": "^7.6.0",
+    "@elastic/elasticsearch": "^7.6.1",
     "body-parser": "^1.19.0",
-    "camelcase-keys": "^6.1.2",
+    "camelcase-keys": "^6.2.1",
     "cors": "^2.8.5",
     "csv-parser": "^2.3.2",
     "express": "^4.17.1",
     "express-bearer-token": "^2.4.0",
-    "firebase-admin": "^8.9.2",
+    "firebase-admin": "^8.10.0",
     "firebase-functions": "^3.3.0",
     "helmet": "^3.21.3",
     "node-fetch": "^2.6.0",
-    "nodemailer": "^6.4.3",
+    "nodemailer": "^6.4.5",
     "nodemailer-mailgun-transport": "^1.4.0",
     "uuid": "^3.4.0"
   },
@@ -42,7 +42,7 @@
     "mocha": "^6.2.2",
     "sinon": "^7.5.0",
     "tslint": "^5.20.1",
-    "typescript": "^3.8.2"
+    "typescript": "^3.8.3"
   },
   "private": true
 }

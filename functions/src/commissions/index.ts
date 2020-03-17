@@ -12,16 +12,21 @@ import { BASE_CURRENCY } from '../exchange';
 import { config } from 'firebase-functions';
 
 const commissionsBucketName = config().platform.commissions_bucket;
-const commissionsBucket = admin.storage().bucket(commissionsBucketName);
 
 const updateCommissionFromBucket = async (
   db: admin.firestore.Firestore,
   object: ObjectMetadata,
 ) => {
-  const fileName = object.name || '';
+  if (!object.name) {
+    return;
+  }
+  const fileName = path.basename(object.name);
+  const source = path.dirname(object.name);
+  console.log(source);
   const tempFilePath = path.join(os.tmpdir(), fileName);
+  const commissionsBucket = admin.storage().bucket(commissionsBucketName);
   await commissionsBucket
-    .file(fileName)
+    .file(object.name)
     .download({ destination: tempFilePath });
 
   const meta = await db.doc('meta/general').get();
@@ -43,42 +48,68 @@ const updateCommissionFromBucket = async (
 
   const userCommissions = {} as { [userId: string]: entity.Commission[] };
 
-  const relevantColumns = [
-    {
-      csv: 'ID',
-      target: 'originId',
-    },
-    {
-      csv: 'Program',
-      target: 'programName',
-    },
-    {
-      csv: 'Commission Amount (RON)',
-      target: 'amount',
-    },
-    {
-      csv: 'Status',
-      target: 'status',
-    },
-    {
-      csv: 'Transaction Date',
-      target: 'createdAt',
-    },
-    {
-      csv: 'Click Tag',
-      target: 'userId',
-    },
-    {
-      csv: 'Comments',
-      target: 'reason',
-    },
-  ];
+  let relevantColumns: { csv: string; target: string }[];
+  let linesToSkip = 0;
+  let originIdSalt = 0;
+  if (source === 'altex') {
+    linesToSkip = 4;
+    relevantColumns = [
+      {
+        csv: 'Comision',
+        target: 'amount',
+      },
+      {
+        csv: 'Status',
+        target: 'status',
+      },
+      {
+        csv: 'Data Comanda',
+        target: 'createdAt',
+      },
+      {
+        csv: 'Tag afiliat',
+        target: 'userId',
+      },
+    ];
+  } else {
+    relevantColumns = [
+      {
+        csv: 'ID',
+        target: 'originId',
+      },
+      {
+        csv: 'Program',
+        target: 'programName',
+      },
+      {
+        csv: 'Commission Amount (RON)',
+        target: 'amount',
+      },
+      {
+        csv: 'Status',
+        target: 'status',
+      },
+      {
+        csv: 'Transaction Date',
+        target: 'createdAt',
+      },
+      {
+        csv: 'Click Tag',
+        target: 'userId',
+      },
+      {
+        csv: 'Comments',
+        target: 'reason',
+      },
+    ];
+  }
   try {
     await new Promise((resolve, reject) =>
       fs
         .createReadStream(tempFilePath)
         .pipe(
           csvParse({
+            skipLines: linesToSkip,
             mapHeaders: ({ header }) => {
               const column = relevantColumns.find((col) => col.csv === header);
               if (column === undefined) {
@@ -91,13 +122,19 @@ const updateCommissionFromBucket = async (
         )
         .on('data', (data) => {
           const { userId, ...rawCommission } = data;
-          const program = programs.find(
-            (p) => p.name === rawCommission.programName,
-          );
+          let programName = rawCommission.programName;
+          if (source === 'altex') {
+            programName = 'Altex';
+          }
+          const program = programs.find((p) => p.name === programName);
 
           // Amounts from CSV are always in RON (already converted)
           const originalAmount =
             Number.parseFloat(rawCommission.amount) * userPercent;
+          const originId = !rawCommission.originId
+            ? parseInt(rawCommission.originId)
+            : Date.parse(rawCommission.createdAt) + originIdSalt;
+          originIdSalt++;
           const commission: entity.Commission = {
             amount: originalAmount,
             originalAmount: originalAmount,
@@ -105,16 +142,16 @@ const updateCommissionFromBucket = async (
             currency: BASE_CURRENCY,
             shopId: !!program ? program.id : null,
             status: rawCommission.status,
-            originId: parseInt(rawCommission.originId),
+            originId: originId,
             program: {
-              name: rawCommission.programName,
+              name: programName,
               logo: !!program ? program.logoPath : null,
             },
             createdAt: admin.firestore.Timestamp.fromMillis(
               Date.parse(rawCommission.createdAt),
             ),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            source: '2p',
+            source: source || '2p',
           };
           if (rawCommission.reason && Array.isArray(rawCommission.reason)) {
             commission.reason = rawCommission.reason.join(' ');

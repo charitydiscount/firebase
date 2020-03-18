@@ -84,6 +84,7 @@ export const createUserCommission = async (req: Request, res: Response) => {
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
+        userId: req.params.userId,
       },
       { merge: true },
     );

@@ -9,7 +9,7 @@ import * as entity from '../entities';
 import { Commission, toCommissionEntity } from './serializer';
 import { getCommissions } from '../two-performant';
 import { asyncForEach, isDev } from '../util';
-import { BASE_CURRENCY } from '../exchange';
+import { BASE_CURRENCY, roundAmount } from '../exchange';
 import { config } from 'firebase-functions';
 
 const bucket = {
@@ -74,7 +74,7 @@ const updateCommissionFromBucket = async (
       },
       {
         csv: 'Data Comanda',
-        target: 'createdAt',
+        target: 'date',
       },
       {
         csv: 'Tag afiliat',
@@ -101,7 +101,7 @@ const updateCommissionFromBucket = async (
       },
       {
         csv: 'Transaction Date',
-        target: 'createdAt',
+        target: 'date',
       },
       {
         csv: 'Click Tag',
@@ -157,16 +157,14 @@ const updateCommissionFromBucket = async (
           const program = programs.find((p) => p.name === programName);
 
           // Amounts from CSV are always in RON (already converted)
-          const originalAmount =
-            Number.parseFloat(rawCommission.amount) * userPercent;
+          const originalAmount = Number.parseFloat(rawCommission.amount);
           const originId = !!rawCommission.originId
             ? parseInt(rawCommission.originId)
-            : moment(rawCommission.createdAt, 'DD.MM.YYYY').valueOf() +
-              originIdSalt;
+            : moment(rawCommission.date, 'DD.MM.YYYY').valueOf() + originIdSalt;
           originIdSalt++;
           const commission: entity.Commission = {
-            amount: originalAmount,
-            originalAmount: originalAmount,
+            amount: roundAmount(originalAmount * userPercent),
+            originalAmount: roundAmount(originalAmount),
             originalCurrency: BASE_CURRENCY,
             currency: BASE_CURRENCY,
             shopId: !!program ? program.id : null,
@@ -177,9 +175,11 @@ const updateCommissionFromBucket = async (
               logo: !!program ? program.logoPath : null,
             },
             createdAt: admin.firestore.Timestamp.fromMillis(
-              moment(rawCommission.createdAt, 'DD.MM.YYYY').valueOf(),
+              moment(rawCommission.date, 'DD.MM.YYYY').valueOf(),
             ),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.Timestamp.fromMillis(
+              moment(rawCommission.date, 'DD.MM.YYYY').valueOf(),
+            ),
             source: source || '2p',
           };
           if (rawCommission.reason && Array.isArray(rawCommission.reason)) {

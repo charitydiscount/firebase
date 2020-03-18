@@ -174,7 +174,7 @@ const getUserCommissions = (commissions: {
 
 export const updateCommissionsFromStorage = functions
   .region('europe-west1')
-  .storage.bucket(commissionsUtil.commissionsBucketName)
+  .storage.bucket(commissionsUtil.bucket.name)
   .object()
   .onFinalize((object) =>
     commissionsUtil.updateCommissionFromBucket(db, object),

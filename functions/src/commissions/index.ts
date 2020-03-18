@@ -7,11 +7,21 @@ import * as entity from '../entities';
 import { ObjectMetadata } from 'firebase-functions/lib/providers/storage';
 import { Commission, toCommissionEntity } from './serializer';
 import { getCommissions } from '../two-performant';
-import { asyncForEach } from '../util';
+import { asyncForEach, isDev } from '../util';
 import { BASE_CURRENCY } from '../exchange';
 import { config } from 'firebase-functions';
 
-const commissionsBucketName = config().platform.commissions_bucket;
+const bucket = {
+  get name() {
+    if (config().platform) {
+      return config().platform.commissions_bucket;
+    } else {
+      return isDev
+        ? 'charitydiscount-dev-commissions'
+        : 'charitydiscount-commissions';
+    }
+  },
+};
 
 const updateCommissionFromBucket = async (
   db: admin.firestore.Firestore,
@@ -24,13 +34,13 @@ const updateCommissionFromBucket = async (
   const source = path.dirname(object.name);
   console.log(source);
   const tempFilePath = path.join(os.tmpdir(), fileName);
-  const commissionsBucket = admin.storage().bucket(commissionsBucketName);
+  const commissionsBucket = admin.storage().bucket(bucket.name);
   await commissionsBucket
     .file(object.name)
     .download({ destination: tempFilePath });
 
   const meta = await db.doc('meta/general').get();
-  const userPercent: number = meta.data()!.percentage || 0.6;
+  const userPercent: number = meta.data()!.userPercentage || 0.6;
 
   // Get the shops in order to retrieve the shop IDs
   const programs: entity.Program[] = [];
@@ -198,7 +208,7 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
   const commissions: Commission[] = await getCommissions();
 
   const meta = await db.doc('meta/general').get();
-  const userPercent: number = meta.data()!.percentage || 0.6;
+  const userPercent: number = meta.data()!.userPercentage || 0.6;
 
   const userCommissions: {
     [userId: string]: { [commissionId: number]: entity.Commission };
@@ -285,4 +295,4 @@ function getUserForCommission(commission: Commission) {
   return commission.statsTags.slice(1, commission.statsTags.length - 1);
 }
 
-export default { commissionsBucketName, updateCommissionFromBucket };
+export default { bucket, updateCommissionFromBucket };

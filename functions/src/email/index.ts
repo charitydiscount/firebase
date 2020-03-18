@@ -1,15 +1,18 @@
 import nodemailer = require('nodemailer');
 import functions = require('firebase-functions');
 import mailgunTransport = require('nodemailer-mailgun-transport');
+import Mail = require('nodemailer/lib/mailer');
 
 const mailgunAuth: mailgunTransport.AuthOptions = {
-  api_key: functions.config().mail.api_key,
-  domain: functions.config().mail.domain,
+  get api_key() {
+    return functions.config().mail.api_key;
+  },
+  get domain() {
+    return functions.config().mail.domain;
+  },
 };
 
-const transporter = nodemailer.createTransport(
-  mailgunTransport({ auth: mailgunAuth, host: 'api.eu.mailgun.net' }),
-);
+let transporter: Mail;
 
 /**
  * Send the given email to the given address
@@ -22,6 +25,11 @@ export const sendEmail = (
   subject: string,
   body: string,
 ) => {
+  if (!transporter) {
+    transporter = nodemailer.createTransport(
+      mailgunTransport({ auth: mailgunAuth, host: 'api.eu.mailgun.net' }),
+    );
+  }
   return transporter.sendMail({
     from: {
       name: functions.config().mail.name,

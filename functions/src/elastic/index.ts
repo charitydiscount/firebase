@@ -23,13 +23,27 @@ export const getElasticClient = () => {
 };
 
 const indeces = {
-  PROGRAMS_INDEX: addEnvPrefix(elasticConfig.index_programs),
-  PRODUCTS_INDEX: elasticConfig.index_products,
-  FEATURED_CATEGORY: addEnvPrefix(elasticConfig.featured),
-  COMMISSIONS_INDEX: addEnvPrefix('tx-in-commissions'),
-  DONATIONS_INDEX: addEnvPrefix('tx-out-donations'),
-  CASHOUT_INDEX: addEnvPrefix('tx-out-cashout'),
-  BONUS_INDEX: addEnvPrefix('tx-bonus'),
+  get PROGRAMS_INDEX() {
+    return addEnvPrefix(elasticConfig.index_programs);
+  },
+  get PRODUCTS_INDEX() {
+    return elasticConfig.index_products;
+  },
+  get FEATURED_CATEGORY() {
+    return addEnvPrefix(elasticConfig.featured);
+  },
+  get COMMISSIONS_INDEX() {
+    return addEnvPrefix('tx-in-commissions');
+  },
+  get DONATIONS_INDEX() {
+    return addEnvPrefix('tx-out-donations');
+  },
+  get CASHOUT_INDEX() {
+    return addEnvPrefix('tx-out-cashout');
+  },
+  get BONUS_INDEX() {
+    return addEnvPrefix('tx-bonus');
+  },
 };
 
 function addEnvPrefix(string: string) {

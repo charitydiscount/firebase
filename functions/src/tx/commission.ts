@@ -44,8 +44,9 @@ export const updateWallet = async (
     .collection('tokens')
     .listDocuments();
   const userDevices: string[] = [];
-  for await (const tokenRef of userTokenDocs.map((doc) => doc.get())) {
-    const device = tokenRef.data();
+  await asyncForEach(userTokenDocs, async (tokenDoc) => {
+    const tokenSnap = await tokenDoc.get();
+    const device = tokenSnap.data();
     if (
       device &&
       (device.notifications === undefined || device.notifications) &&
@@ -53,7 +54,7 @@ export const updateWallet = async (
     ) {
       userDevices.push(device.token);
     }
-  }
+  });
 
   const newPendingCommissions = newCommissions.filter(
     (commission) =>

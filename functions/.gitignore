@@ -5,5 +5,7 @@ lib/**/*.js.map
 # Typescript v1 declaration files
 typings/
 
+.idea/
+
 node_modules/
 .runtimeconfig.json

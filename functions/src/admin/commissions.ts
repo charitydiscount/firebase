@@ -44,7 +44,14 @@ export const getCommissionsOfUser = (req: Request, res: Response) =>
 export const createUserCommission = async (req: Request, res: Response) => {
   const validationResult = validateNewCommission(req.body);
   if (!validationResult.isValid) {
-    return res.json(validationResult.violations).status(422);
+    return res.status(422).json(validationResult.violations);
+  }
+
+  let user: admin.auth.UserRecord;
+  try {
+    user = await admin.auth().getUser(req.params.userId);
+  } catch (e) {
+    return res.status(404).json('User not found');
   }
 
   const meta = await _db.doc('meta/general').get();
@@ -76,7 +83,7 @@ export const createUserCommission = async (req: Request, res: Response) => {
 
   const saveResult = await _db
     .collection('commissions')
-    .doc(req.params.userId)
+    .doc(user.uid)
     .set(
       {
         [commissionid]: {
@@ -84,7 +91,7 @@ export const createUserCommission = async (req: Request, res: Response) => {
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
-        userId: req.params.userId,
+        userId: user.uid,
       },
       { merge: true },
     );
@@ -102,12 +109,18 @@ export const createUserCommission = async (req: Request, res: Response) => {
 export const updateUserCommission = async (req: Request, res: Response) => {
   const validationResult = validateCommission(req.body);
   if (!validationResult.isValid) {
-    return res.json(validationResult.violations).status(422);
+    return res.status(422).json(validationResult.violations);
+  }
+  let user: admin.auth.UserRecord;
+  try {
+    user = await admin.auth().getUser(req.params.userId);
+  } catch (e) {
+    return res.status(404).json('User not found');
   }
 
   const saveResult = await _db
     .collection('commissions')
-    .doc(req.params.userId)
+    .doc(user.uid)
     .set(
       {
         [req.params.commissionId]: {

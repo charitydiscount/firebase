@@ -3,8 +3,9 @@ import path = require('path');
 import os = require('os');
 import fs = require('fs');
 import csvParse = require('csv-parser');
-import * as entity from '../entities';
 import { ObjectMetadata } from 'firebase-functions/lib/providers/storage';
+import moment = require('moment');
+import * as entity from '../entities';
 import { Commission, toCommissionEntity } from './serializer';
 import { getCommissions } from '../two-performant';
 import { asyncForEach, isDev } from '../util';
@@ -32,7 +33,6 @@ const updateCommissionFromBucket = async (
   }
   const fileName = path.basename(object.name);
   const source = path.dirname(object.name);
-  console.log(source);
   const tempFilePath = path.join(os.tmpdir(), fileName);
   const commissionsBucket = admin.storage().bucket(bucket.name);
   await commissionsBucket
@@ -62,7 +62,7 @@ const updateCommissionFromBucket = async (
   let linesToSkip = 0;
   let originIdSalt = 0;
   if (source === 'altex') {
-    linesToSkip = 4;
+    linesToSkip = 5;
     relevantColumns = [
       {
         csv: 'Comision',
@@ -132,18 +132,37 @@ const updateCommissionFromBucket = async (
         )
         .on('data', (data) => {
           const { userId, ...rawCommission } = data;
+          if (!userId) {
+            return;
+          }
+
           let programName = rawCommission.programName;
+          let commissionStatus = rawCommission.status;
           if (source === 'altex') {
             programName = 'Altex';
+            switch (rawCommission.status) {
+              case 'In asteptare':
+                commissionStatus = 'pending';
+                break;
+              case 'Aprobat':
+                commissionStatus = 'paid';
+                break;
+              case 'Anulat':
+                commissionStatus = 'rejected';
+                break;
+              default:
+                break;
+            }
           }
           const program = programs.find((p) => p.name === programName);
 
           // Amounts from CSV are always in RON (already converted)
           const originalAmount =
             Number.parseFloat(rawCommission.amount) * userPercent;
-          const originId = !rawCommission.originId
+          const originId = !!rawCommission.originId
             ? parseInt(rawCommission.originId)
-            : Date.parse(rawCommission.createdAt) + originIdSalt;
+            : moment(rawCommission.createdAt, 'DD.MM.YYYY').valueOf() +
+              originIdSalt;
           originIdSalt++;
           const commission: entity.Commission = {
             amount: originalAmount,
@@ -151,14 +170,14 @@ const updateCommissionFromBucket = async (
             originalCurrency: BASE_CURRENCY,
             currency: BASE_CURRENCY,
             shopId: !!program ? program.id : null,
-            status: rawCommission.status,
+            status: commissionStatus,
             originId: originId,
             program: {
               name: programName,
               logo: !!program ? program.logoPath : null,
             },
             createdAt: admin.firestore.Timestamp.fromMillis(
-              Date.parse(rawCommission.createdAt),
+              moment(rawCommission.createdAt, 'DD.MM.YYYY').valueOf(),
             ),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             source: source || '2p',
@@ -192,7 +211,7 @@ const updateCommissionFromBucket = async (
           ),
       );
     }
-    return promises;
+    return Promise.all(promises);
   } catch (e) {
     console.log(e);
     fs.unlinkSync(tempFilePath);

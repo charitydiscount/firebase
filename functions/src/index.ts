@@ -192,7 +192,7 @@ export const auth = functions.region('europe-west1').https.onRequest(authApp);
 
 const commissionsInterval =
   admin.instanceId().app.options.projectId === 'charitydiscount-test'
-    ? '2 hours'
+    ? '24 hours'
     : '10 minutes';
 
 export const updateCommissionsFromApi = functions

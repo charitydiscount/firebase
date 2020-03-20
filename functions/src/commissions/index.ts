@@ -7,10 +7,11 @@ import { ObjectMetadata } from 'firebase-functions/lib/providers/storage';
 import moment = require('moment');
 import * as entity from '../entities';
 import { Commission, toCommissionEntity } from './serializer';
-import { getCommissions } from '../two-performant';
+import { getCommissions2P } from '../two-performant';
 import { asyncForEach, isDev } from '../util';
 import { BASE_CURRENCY, roundAmount } from '../exchange';
 import { config } from 'firebase-functions';
+import { getAltexCommissionStatus, getAltexCommissions } from '../altex';
 
 const bucket = {
   get name() {
@@ -140,19 +141,7 @@ const updateCommissionFromBucket = async (
           let commissionStatus = rawCommission.status;
           if (source === 'altex') {
             programName = 'Altex';
-            switch (rawCommission.status) {
-              case 'In asteptare':
-                commissionStatus = 'pending';
-                break;
-              case 'Aprobat':
-                commissionStatus = 'paid';
-                break;
-              case 'Anulat':
-                commissionStatus = 'rejected';
-                break;
-              default:
-                break;
-            }
+            commissionStatus = getAltexCommissionStatus(rawCommission);
           }
           const program = programs.find((p) => p.name === programName);
 
@@ -224,8 +213,6 @@ const updateCommissionFromBucket = async (
  * @param commissions
  */
 export async function updateCommissions(db: admin.firestore.Firestore) {
-  const commissions: Commission[] = await getCommissions();
-
   const meta = await db.doc('meta/general').get();
   const userPercent: number = meta.data()!.userPercentage || 0.6;
 
@@ -237,8 +224,10 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     [userId: string]: { [commissionId: number]: entity.Commission } | null;
   } = {};
 
-  await asyncForEach(commissions, async (commission) => {
-    const userIdOfCommission = getUserForCommission(commission);
+  // Prepare commissions from 2performant
+  const commissions2p: Commission[] = await getCommissions2P();
+  await asyncForEach(commissions2p, async (commission) => {
+    const userIdOfCommission = getUserFor2PCommission(commission);
     const commissionToBeSaved = await toCommissionEntity(
       commission,
       userPercent,
@@ -262,21 +251,41 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     }
 
     const currentUserCommissions = currentCommissions[userIdOfCommission];
-    if (
-      currentUserCommissions === undefined ||
-      currentUserCommissions === null ||
-      !currentUserCommissions[commission.id] ||
-      !currentUserCommissions[commission.id].updatedAt.isEqual(
-        //@ts-ignore
-        commissionToBeSaved.updatedAt,
-      )
-    ) {
+    if (shouldUpdateCommission(currentUserCommissions, commissionToBeSaved)) {
       userCommissions[userIdOfCommission] = {
         ...userCommissions[userIdOfCommission],
-        ...{ [commission.id]: commissionToBeSaved },
+        ...{ [commissionToBeSaved.originId]: commissionToBeSaved },
       };
     }
   });
+
+  const programs: entity.Program[] = [];
+  const programsSnap = await db
+    .collection('programs')
+    .doc('all')
+    .get();
+  const programsData = <entity.ProgramSnapshot>programsSnap.data();
+
+  for (const uniqueCode in programsData) {
+    if (programsData.hasOwnProperty(uniqueCode) && uniqueCode !== 'updatedAt') {
+      programs.push(programsData[uniqueCode]);
+    }
+  }
+
+  const commissionsAltex = await getAltexCommissions(
+    //@ts-ignore
+    programs.find((p) => p.name === 'Altex'),
+    userPercent,
+  );
+  console.log(commissionsAltex);
+
+  // Merge commissions
+  // for (const userId in commissionsAltex) {
+  //   userCommissions[userId] = {
+  //     ...userCommissions[userId],
+  //     ...commissionsAltex[userId],
+  //   };
+  // }
 
   const promises: Promise<any>[] = [];
   for (const userId in userCommissions) {
@@ -306,12 +315,27 @@ const getCurrentUserCommissions = (
     .doc(userId)
     .get();
 
-function getUserForCommission(commission: Commission) {
+const shouldUpdateCommission = (
+  currentUserCommissions: { [commissionId: number]: entity.Commission } | null,
+  commissionToBeSaved: entity.Commission,
+) => {
+  return (
+    currentUserCommissions === undefined ||
+    currentUserCommissions === null ||
+    !currentUserCommissions[commissionToBeSaved.originId] ||
+    !currentUserCommissions[commissionToBeSaved.originId].updatedAt.isEqual(
+      //@ts-ignore
+      commissionToBeSaved.updatedAt,
+    )
+  );
+};
+
+const getUserFor2PCommission = (commission: Commission) => {
   if (!commission.statsTags || commission.statsTags.length === 0) {
     return '';
   }
 
   return commission.statsTags.slice(1, commission.statsTags.length - 1);
-}
+};
 
 export default { bucket, updateCommissionFromBucket };

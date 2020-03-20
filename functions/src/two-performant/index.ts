@@ -97,7 +97,7 @@ async function get2PPromotionDataForPage(page: number): Promise<any> {
 /**
  * Get the 2Performant affiliate commissions
  */
-export async function getCommissions(): Promise<Commission[]> {
+export async function getCommissions2P(): Promise<Commission[]> {
   const commissions = await getAllEntities<Commission>(
     getCommissionsForPage,
     'commissions',
@@ -277,7 +277,7 @@ const buildAffiliateUrl = (affiliateCode: string, redirectUrl: string) => {
 };
 
 export default {
-  getCommissions,
+  getCommissions: getCommissions2P,
   getPrograms,
   getAffiliateCodes,
 };

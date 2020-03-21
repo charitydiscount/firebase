@@ -74,6 +74,10 @@ const updateCommissionFromBucket = async (
         target: 'status',
       },
       {
+        csv: 'Suma',
+        target: 'saleAmount',
+      },
+      {
         csv: 'Data Comanda',
         target: 'date',
       },
@@ -95,6 +99,10 @@ const updateCommissionFromBucket = async (
       {
         csv: 'Commission Amount (RON)',
         target: 'amount',
+      },
+      {
+        csv: 'Sale Amount (RON)',
+        target: 'saleAmount',
       },
       {
         csv: 'Status',
@@ -152,9 +160,12 @@ const updateCommissionFromBucket = async (
             : moment(rawCommission.date, 'DD.MM.YYYY').valueOf() + originIdSalt;
           originIdSalt++;
           const commission: entity.Commission = {
-            amount: roundAmount(originalAmount * userPercent),
             originalAmount: roundAmount(originalAmount),
+            saleAmount: roundAmount(
+              Number.parseFloat(rawCommission.saleAmount),
+            ),
             originalCurrency: BASE_CURRENCY,
+            amount: roundAmount(originalAmount * userPercent),
             currency: BASE_CURRENCY,
             shopId: !!program ? program.id : null,
             status: commissionStatus,
@@ -272,20 +283,15 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     }
   }
 
-  const commissionsAltex = await getAltexCommissions(
-    //@ts-ignore
-    programs.find((p) => p.name === 'Altex'),
-    userPercent,
-  );
-  console.log(commissionsAltex);
+  const commissionsAltex = await getAltexCommissions(userPercent);
 
   // Merge commissions
-  // for (const userId in commissionsAltex) {
-  //   userCommissions[userId] = {
-  //     ...userCommissions[userId],
-  //     ...commissionsAltex[userId],
-  //   };
-  // }
+  for (const userId in commissionsAltex) {
+    userCommissions[userId] = {
+      ...userCommissions[userId],
+      ...commissionsAltex[userId],
+    };
+  }
 
   const promises: Promise<any>[] = [];
   for (const userId in userCommissions) {

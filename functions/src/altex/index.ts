@@ -1,19 +1,28 @@
 import puppeteer = require('puppeteer');
 import { config } from 'firebase-functions';
 import moment = require('moment');
-import { Commission, Program } from '../entities';
+import { Commission } from '../entities';
 import { firestore } from 'firebase-admin';
+import { roundAmount } from '../exchange';
 
-export const getAltexCommissions = async (
-  altexProgram: Program,
-  userPercentage: number,
-) => {
-  const altexConfig = config().altex;
+interface AltexConfig {
+  site: string;
+  email: string;
+  pass: string;
+  name: string;
+  logo: string;
+  id: string;
+}
+
+export const getAltexCommissions = async (userPercentage: number) => {
+  const altexConfig: AltexConfig = config().altex;
   if (!altexConfig) {
     console.log('Altex env variables missing');
     throw Error('Altex env variables missing');
   }
-  const browser = await puppeteer.launch({});
+  const browser = await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
   const page = await browser.newPage();
   await page.goto(altexConfig.site);
 
@@ -57,13 +66,13 @@ export const getAltexCommissions = async (
 
   await browser.close();
 
-  return chunkCommissions(rawCommissions, altexProgram, userPercentage);
+  return chunkCommissions(rawCommissions, userPercentage, altexConfig);
 };
 
 const chunkCommissions = (
   rawCommissions: string[],
-  altexProgram: Program,
   userPercentage: number,
+  altexConfig: AltexConfig,
 ): { [userId: string]: { [commissionId: number]: Commission } } => {
   const commissions: {
     [userId: string]: { [commissionId: number]: Commission };
@@ -82,22 +91,27 @@ const chunkCommissions = (
     const commissionAmount = parseFloat(
       rawCommissions[i + 6].replace(',', '.'),
     );
+    const saleAmount = parseFloat(rawCommissions[i + 4].replace(',', '.'));
 
+    if (commissions[userId] === undefined) {
+      commissions[userId] = {};
+    }
     commissions[userId][commissionId] = {
       createdAt: firestore.Timestamp.fromMillis(commissionDate.valueOf()),
       updatedAt: firestore.Timestamp.fromMillis(commissionDate.valueOf()),
       status: getAltexCommissionStatus(rawCommissions[i + 2]),
-      originalAmount: commissionAmount,
+      originalAmount: roundAmount(commissionAmount),
+      saleAmount: roundAmount(saleAmount),
       originalCurrency: 'RON',
-      amount: commissionAmount * userPercentage,
+      amount: roundAmount(commissionAmount * userPercentage),
       currency: 'RON',
-      source: altexProgram.source,
+      source: 'altex',
       originId: commissionId,
       program: {
-        name: altexProgram.name,
-        logo: altexProgram.logoPath,
+        name: altexConfig.name,
+        logo: altexConfig.logo,
       },
-      shopId: altexProgram.id,
+      shopId: parseInt(altexConfig.id),
     };
   }
 

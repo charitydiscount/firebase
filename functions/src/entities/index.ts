@@ -2,11 +2,12 @@ import { firestore } from 'firebase-admin';
 
 export interface Commission {
   originalAmount: number;
+  saleAmount: number;
+  originalCurrency: string;
   amount: number;
+  currency: string;
   createdAt: firestore.Timestamp;
   updatedAt: firestore.Timestamp | firestore.FieldValue;
-  originalCurrency: string;
-  currency: string;
   shopId: number | null;
   status: string;
   originId: number;

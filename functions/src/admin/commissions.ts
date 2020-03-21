@@ -67,6 +67,7 @@ export const createUserCommission = async (req: Request, res: Response) => {
   const commissionid = req.body.originId || Date.now();
   const newUserCommission: Commission = {
     originalAmount: roundAmount(req.body.originalAmount),
+    saleAmount: 0,
     originalCurrency: req.body.originalCurrency,
     amount: roundAmount(userAmount),
     currency: currency,

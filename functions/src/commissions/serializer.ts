@@ -45,7 +45,7 @@ export interface PublicActionData {
   createdAt: string;
   updatedAt: string;
   rate: null;
-  amount: null;
+  amount: string | null;
   adType: string;
   adId: string;
   sourceIp: string;
@@ -125,8 +125,11 @@ export const toCommissionEntity = async (
     originalAmount: roundAmount(
       Number.parseFloat(comm.amountInWorkingCurrency),
     ),
-    amount: roundAmount(convertedUserAmount),
+    saleAmount: roundAmount(
+      Number.parseFloat(comm.publicActionData.amount || '0'),
+    ),
     originalCurrency: comm.workingCurrencyCode,
+    amount: roundAmount(convertedUserAmount),
     currency: currency,
     shopId: comm.programId,
     status: comm.status,

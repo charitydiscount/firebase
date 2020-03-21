@@ -270,19 +270,6 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     }
   });
 
-  const programs: entity.Program[] = [];
-  const programsSnap = await db
-    .collection('programs')
-    .doc('all')
-    .get();
-  const programsData = <entity.ProgramSnapshot>programsSnap.data();
-
-  for (const uniqueCode in programsData) {
-    if (programsData.hasOwnProperty(uniqueCode) && uniqueCode !== 'updatedAt') {
-      programs.push(programsData[uniqueCode]);
-    }
-  }
-
   const commissionsAltex = await getAltexCommissions(userPercent);
 
   // Merge commissions

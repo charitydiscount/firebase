@@ -49,8 +49,8 @@ const createProgram = async (req: Request, res: Response) => {
       {
         [programUniqueCode]: {
           ...req.body,
-          uniqueCode: programId,
-          id: programUniqueCode,
+          uniqueCode: programUniqueCode,
+          id: programId,
         },
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
@@ -58,8 +58,8 @@ const createProgram = async (req: Request, res: Response) => {
     );
   return res.json({
     ...req.body,
-    uniqueCode: programId,
-    id: programUniqueCode,
+    uniqueCode: programUniqueCode,
+    id: programId,
   });
 };
 

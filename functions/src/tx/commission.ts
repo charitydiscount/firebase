@@ -38,6 +38,11 @@ export const updateWallet = async (
     .reduce((a1, a2) => a1 + a2, 0);
 
   const userWalletRef = db.collection('points').doc(userId);
+  const userWallet = await userWalletRef.get();
+  if (!userWallet.exists) {
+    console.log(`Wallet of user ${userId} doesn't exist. Probably new user`);
+    return;
+  }
   const userTokenDocs = await db
     .collection('users')
     .doc(userId)

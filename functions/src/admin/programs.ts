@@ -40,18 +40,27 @@ const getProgram = (req: Request, res: Response) =>
  * @param res Express response
  */
 const createProgram = async (req: Request, res: Response) => {
-  const programId = uuid();
+  const programId = Date.now();
+  const programUniqueCode = uuid();
   await _db
     .collection('programs')
     .doc('all')
     .set(
       {
-        [programId]: { ...req.body, uniqueCode: programId, id: programId },
+        [programUniqueCode]: {
+          ...req.body,
+          uniqueCode: programId,
+          id: programUniqueCode,
+        },
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
       { merge: true },
     );
-  return res.json({ uniqueCode: programId });
+  return res.json({
+    ...req.body,
+    uniqueCode: programId,
+    id: programUniqueCode,
+  });
 };
 
 /**
@@ -60,8 +69,12 @@ const createProgram = async (req: Request, res: Response) => {
  *            and program unique code in params
  * @param res Express response
  */
-const updateProgram = (req: Request, res: Response) =>
-  _db
+const updateProgram = (req: Request, res: Response) => {
+  if (typeof req.body.id === 'string') {
+    req.body.id = Date.now();
+    console.log(`New program ID is ${req.body.id}`);
+  }
+  return _db
     .collection('programs')
     .doc('all')
     .set(
@@ -71,7 +84,9 @@ const updateProgram = (req: Request, res: Response) =>
       },
       { merge: true },
     )
-    .then(() => res.sendStatus(200));
+    .then(() => res.json(req.body))
+    .catch((e) => res.status(400).json(e));
+};
 
 export default {
   getPrograms,

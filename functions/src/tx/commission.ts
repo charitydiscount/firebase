@@ -1,8 +1,6 @@
 import { Commission, UserTransaction, TxType } from './types';
-import { messaging, firestore } from 'firebase-admin';
-import { asyncForEach } from '../util';
-
-const fcm = messaging();
+import { firestore } from 'firebase-admin';
+import { asyncForEach, sendNotification } from '../util';
 
 /**
  * Update the cashback of the user based on the change in commissions
@@ -43,23 +41,6 @@ export const updateWallet = async (
     console.log(`Wallet of user ${userId} doesn't exist. Probably new user`);
     return;
   }
-  const userTokenDocs = await db
-    .collection('users')
-    .doc(userId)
-    .collection('tokens')
-    .listDocuments();
-  const userDevices: string[] = [];
-  await asyncForEach(userTokenDocs, async (tokenDoc) => {
-    const tokenSnap = await tokenDoc.get();
-    const device = tokenSnap.data();
-    if (
-      device &&
-      (device.notifications === undefined || device.notifications) &&
-      device.token
-    ) {
-      userDevices.push(device.token);
-    }
-  });
 
   const newPendingCommissions = newCommissions.filter(
     (commission) =>
@@ -69,24 +50,19 @@ export const updateWallet = async (
       ) === undefined,
   );
 
+  const userDevices: string[] = await getUserDeviceTokens(db, userId);
   if (userDevices.length > 0) {
     await asyncForEach(
       newPendingCommissions,
       async (commission: Commission) => {
-        const notification: messaging.MessagingPayload = {
-          notification: {
+        await sendNotification(
+          {
             title: 'Felicitări!🛒',
             body: `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`,
-          },
-          data: {
-            click_action: 'FLUTTER_NOTIFICATION_CLICK',
             type: 'COMMISSION',
           },
-        };
-
-        await fcm
-          .sendToDevice(userDevices, notification)
-          .catch((e) => console.log(e));
+          userDevices,
+        );
       },
     );
   }
@@ -96,20 +72,14 @@ export const updateWallet = async (
       await asyncForEach(
         unprocessedAcceptedCommissions,
         async (commission: Commission) => {
-          const notification: messaging.MessagingPayload = {
-            notification: {
+          await sendNotification(
+            {
               title: 'Cashback primit!💰',
               body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
-            },
-            data: {
-              click_action: 'FLUTTER_NOTIFICATION_CLICK',
               type: 'COMMISSION',
             },
-          };
-
-          await fcm
-            .sendToDevice(userDevices, notification)
-            .catch((e) => console.log(e));
+            userDevices,
+          );
         },
       );
     }
@@ -151,4 +121,26 @@ const getTxFromCommissions = (
       userId: userId,
     };
   });
+};
+
+const getUserDeviceTokens = async (db: firestore.Firestore, userId: string) => {
+  const userTokenDocs = await db
+    .collection('users')
+    .doc(userId)
+    .collection('tokens')
+    .listDocuments();
+  const userDevices: string[] = [];
+  await asyncForEach(userTokenDocs, async (tokenDoc) => {
+    const tokenSnap = await tokenDoc.get();
+    const device = tokenSnap.data();
+    if (
+      device &&
+      (device.notifications === undefined || device.notifications) &&
+      device.token
+    ) {
+      userDevices.push(device.token);
+    }
+  });
+
+  return userDevices;
 };

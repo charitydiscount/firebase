@@ -50,60 +50,56 @@ export const updateWallet = async (
       ) === undefined,
   );
 
-  const userDevices: string[] = await getUserDeviceTokens(db, userId);
-  if (userDevices.length > 0) {
-    await asyncForEach(
-      newPendingCommissions,
-      async (commission: Commission) => {
+  if (
+    unprocessedAcceptedCommissions.length === 0 &&
+    newPendingCommissions.length === 0
+  ) {
+    // No new commissions
+    return;
+  }
+
+  let userDevices: string[];
+  await asyncForEach(newPendingCommissions, async (commission: Commission) => {
+    if (userDevices === undefined) {
+      userDevices = await getUserDeviceTokens(db, userId);
+    }
+    if (userDevices && userDevices.length > 0) {
+      await sendNotification(
+        {
+          title: 'Felicitări!🛒',
+          body: `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`,
+          type: TxType.COMMISSION,
+        },
+        userDevices,
+      );
+    }
+  });
+
+  await asyncForEach(
+    unprocessedAcceptedCommissions,
+    async (commission: Commission) => {
+      if (userDevices === undefined) {
+        userDevices = await getUserDeviceTokens(db, userId);
+      }
+      if (userDevices && userDevices.length > 0) {
         await sendNotification(
           {
-            title: 'Felicitări!🛒',
-            body: `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`,
-            type: 'COMMISSION',
+            title: 'Cashback primit!💰',
+            body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
+            type: TxType.COMMISSION,
           },
           userDevices,
         );
-      },
-    );
-  }
+      }
+    },
+  );
 
-  if (unprocessedAcceptedCommissions.length > 0) {
-    if (userDevices.length > 0) {
-      await asyncForEach(
-        unprocessedAcceptedCommissions,
-        async (commission: Commission) => {
-          await sendNotification(
-            {
-              title: 'Cashback primit!💰',
-              body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
-              type: 'COMMISSION',
-            },
-            userDevices,
-          );
-        },
-      );
-    }
-
-    const newTransactions = getTxFromCommissions(
-      unprocessedAcceptedCommissions,
-      userId,
-    );
-    const incommingAcceptedAmount = unprocessedAcceptedCommissions
-      .map((commission) => commission.amount)
-      .reduce((a1, a2) => a1 + a2, 0);
-
-    return userWalletRef.update({
-      'cashback.pending': pendingAmount,
-      'cashback.approved': firestore.FieldValue.increment(
-        incommingAcceptedAmount,
-      ),
-      'transactions': firestore.FieldValue.arrayUnion(...newTransactions),
-    });
-  } else {
-    return userWalletRef.update({
-      'cashback.pending': pendingAmount,
-    });
-  }
+  await saveTransactionsToWallet(
+    userId,
+    userWalletRef,
+    pendingAmount,
+    unprocessedAcceptedCommissions,
+  );
 };
 
 const getTxFromCommissions = (
@@ -143,4 +139,30 @@ const getUserDeviceTokens = async (db: firestore.Firestore, userId: string) => {
   });
 
   return userDevices;
+};
+
+const saveTransactionsToWallet = (
+  userId: string,
+  walletRef: firestore.DocumentReference,
+  totalPendingAmount: number,
+  newPaidCommissions: Commission[],
+) => {
+  if (newPaidCommissions && newPaidCommissions.length > 0) {
+    const newTransactions = getTxFromCommissions(newPaidCommissions, userId);
+    const incommingAcceptedAmount = newPaidCommissions
+      .map((commission) => commission.amount)
+      .reduce((a1, a2) => a1 + a2, 0);
+
+    return walletRef.update({
+      'cashback.pending': totalPendingAmount,
+      'cashback.approved': firestore.FieldValue.increment(
+        incommingAcceptedAmount,
+      ),
+      'transactions': firestore.FieldValue.arrayUnion(...newTransactions),
+    });
+  } else {
+    return walletRef.update({
+      'cashback.pending': totalPendingAmount,
+    });
+  }
 };

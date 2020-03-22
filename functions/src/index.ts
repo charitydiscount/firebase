@@ -16,7 +16,7 @@ const db = admin.firestore();
 import { processTx } from './tx';
 import { TxStatus, Commission } from './tx/types';
 import { updateProgramRating } from './rating';
-import { createWallet, createUser } from './user';
+import { createWallet, createUser, handleReferral } from './user';
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import searchApp from './search';
@@ -221,3 +221,11 @@ export const updatePromotions = functions
 export const manage = functions
   .region('europe-west1')
   .https.onRequest(adminApp);
+
+/**
+ * Create the referral relationship
+ */
+export const handleReferralRequest = functions
+  .region('europe-west1')
+  .firestore.document('referral-requests/{requestId}')
+  .onCreate(async (snap, context) => handleReferral(db, snap));

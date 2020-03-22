@@ -150,3 +150,19 @@ export interface UserAccount {
   name: string;
   nickname?: string;
 }
+
+export interface Referral {
+  ownerId: string;
+  userId: string;
+  name: string;
+  photoUrl: string;
+  createdAt: firestore.FieldValue | firestore.Timestamp;
+}
+
+export interface ReferralRequest {
+  newUserId: string;
+  referralCode: string;
+  createdAt: firestore.Timestamp;
+  valid: boolean | undefined;
+  reason: string | undefined;
+}

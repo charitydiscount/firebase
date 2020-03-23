@@ -4,6 +4,7 @@ import moment = require('moment');
 import { Commission } from '../entities';
 import { firestore } from 'firebase-admin';
 import { roundAmount } from '../exchange';
+import { chunk } from 'lodash';
 
 interface AltexConfig {
   site: string;
@@ -79,19 +80,20 @@ const chunkCommissions = (
   } = {};
 
   let originIdSalt = 0;
-  for (let i = 0, len = rawCommissions.length; i < len; i += 9) {
-    const userId = rawCommissions[i + 8];
-    const commissionDate = moment(rawCommissions[i + 1], 'DD.MM.YYYY');
+
+  const chunkedCommissions = chunk(rawCommissions, 9).reverse();
+
+  for (const rawCommission of chunkedCommissions) {
+    const userId = rawCommission[8];
+    const commissionDate = moment(rawCommission[1], 'DD.MM.YYYY');
     if (!userId || !commissionDate) {
       continue;
     }
     const commissionId = commissionDate.valueOf() + originIdSalt;
     originIdSalt++;
 
-    const commissionAmount = parseFloat(
-      rawCommissions[i + 6].replace(',', '.'),
-    );
-    const saleAmount = parseFloat(rawCommissions[i + 4].replace(',', '.'));
+    const commissionAmount = parseFloat(rawCommission[6].replace(',', '.'));
+    const saleAmount = parseFloat(rawCommission[4].replace(',', '.'));
 
     if (commissions[userId] === undefined) {
       commissions[userId] = {};
@@ -99,7 +101,7 @@ const chunkCommissions = (
     commissions[userId][commissionId] = {
       createdAt: firestore.Timestamp.fromMillis(commissionDate.valueOf()),
       updatedAt: firestore.Timestamp.fromMillis(commissionDate.valueOf()),
-      status: getAltexCommissionStatus(rawCommissions[i + 2]),
+      status: getAltexCommissionStatus(rawCommission[2]),
       originalAmount: roundAmount(commissionAmount),
       saleAmount: roundAmount(saleAmount),
       originalCurrency: 'RON',

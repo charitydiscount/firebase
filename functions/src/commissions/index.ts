@@ -6,7 +6,11 @@ import csvParse = require('csv-parser');
 import { ObjectMetadata } from 'firebase-functions/lib/providers/storage';
 import moment = require('moment');
 import * as entity from '../entities';
-import { Commission, toCommissionEntity } from './serializer';
+import {
+  Commission,
+  toCommissionEntity,
+  getUserFor2PCommission,
+} from './serializer';
 import { getCommissions2P } from '../two-performant';
 import { asyncForEach, isDev } from '../util';
 import { BASE_CURRENCY, roundAmount } from '../exchange';
@@ -235,49 +239,36 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     [userId: string]: { [commissionId: number]: entity.Commission } | null;
   } = {};
 
-  // Prepare commissions from 2performant
-  const commissions2p: Commission[] = await getCommissions2P();
-  await asyncForEach(commissions2p, async (commission) => {
-    const userIdOfCommission = getUserFor2PCommission(commission);
-    const commissionToBeSaved = await toCommissionEntity(
-      commission,
-      userPercent,
-    );
-
-    if (currentCommissions[userIdOfCommission] === undefined) {
-      const userCommSnap = await getCurrentUserCommissions(
-        db,
-        userIdOfCommission,
-      );
-      if (!userCommSnap.exists) {
-        currentCommissions[userIdOfCommission] = null;
-      } else {
-        const snapData = userCommSnap.data();
-        if (snapData) {
-          currentCommissions[userIdOfCommission] = snapData;
-        } else {
-          currentCommissions[userIdOfCommission] = null;
-        }
-      }
-    }
-
-    const currentUserCommissions = currentCommissions[userIdOfCommission];
-    if (shouldUpdateCommission(currentUserCommissions, commissionToBeSaved)) {
-      userCommissions[userIdOfCommission] = {
-        ...userCommissions[userIdOfCommission],
-        ...{ [commissionToBeSaved.originId]: commissionToBeSaved },
-      };
-    }
-  });
-
+  const newCommissions = await get2PCommissions(userPercent);
   const commissionsAltex = await getAltexCommissions(userPercent);
 
   // Merge commissions
   for (const userId in commissionsAltex) {
-    userCommissions[userId] = {
-      ...userCommissions[userId],
+    newCommissions[userId] = {
+      ...newCommissions[userId],
       ...commissionsAltex[userId],
     };
+  }
+
+  for (const userId in newCommissions) {
+    for (const commissionId in newCommissions[userId]) {
+      const commissionToBeSaved = newCommissions[userId][commissionId];
+      if (currentCommissions[userId] === undefined) {
+        currentCommissions[userId] = await getCurrentUserCommissions(
+          db,
+          userId,
+        );
+      }
+
+      if (
+        shouldUpdateCommission(currentCommissions[userId], commissionToBeSaved)
+      ) {
+        userCommissions[userId] = {
+          ...userCommissions[userId],
+          ...{ [commissionToBeSaved.originId]: commissionToBeSaved },
+        };
+      }
+    }
   }
 
   const promises: Promise<any>[] = [];
@@ -299,14 +290,25 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
   return promises;
 }
 
-const getCurrentUserCommissions = (
+const getCurrentUserCommissions = async (
   db: admin.firestore.Firestore,
   userId: string,
-) =>
-  db
+) => {
+  const userCommSnap = await db
     .collection('commissions')
     .doc(userId)
     .get();
+  if (!userCommSnap.exists) {
+    return null;
+  } else {
+    const snapData = userCommSnap.data();
+    if (snapData) {
+      return snapData;
+    } else {
+      return null;
+    }
+  }
+};
 
 const shouldUpdateCommission = (
   currentUserCommissions: { [commissionId: number]: entity.Commission } | null,
@@ -323,12 +325,26 @@ const shouldUpdateCommission = (
   );
 };
 
-const getUserFor2PCommission = (commission: Commission) => {
-  if (!commission.statsTags || commission.statsTags.length === 0) {
-    return '';
-  }
+const get2PCommissions = async (userPercent: number) => {
+  const commissions: {
+    [userId: string]: { [commissionId: number]: entity.Commission };
+  } = {};
 
-  return commission.statsTags.slice(1, commission.statsTags.length - 1);
+  const commissions2p: Commission[] = await getCommissions2P();
+  await asyncForEach(commissions2p, async (commission) => {
+    const userIdOfCommission = getUserFor2PCommission(commission);
+    const commissionToBeSaved = await toCommissionEntity(
+      commission,
+      userPercent,
+    );
+
+    commissions[userIdOfCommission] = {
+      ...commissions[userIdOfCommission],
+      [commissionToBeSaved.originId]: commissionToBeSaved,
+    };
+  });
+
+  return commissions;
 };
 
 export default { bucket, updateCommissionFromBucket };

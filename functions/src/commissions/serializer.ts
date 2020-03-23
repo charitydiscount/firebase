@@ -144,3 +144,11 @@ export const toCommissionEntity = async (
   }
   return commission;
 };
+
+export const getUserFor2PCommission = (commission: Commission) => {
+  if (!commission.statsTags || commission.statsTags.length === 0) {
+    return '';
+  }
+
+  return commission.statsTags.slice(1, commission.statsTags.length - 1);
+};

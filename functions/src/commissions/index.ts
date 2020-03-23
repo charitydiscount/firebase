@@ -229,17 +229,11 @@ const updateCommissionFromBucket = async (
  */
 export async function updateCommissions(db: admin.firestore.Firestore) {
   const meta = await db.doc('meta/general').get();
-  const userPercent: number = meta.data()!.userPercentage || 0.6;
+  const metaData = meta.data() as entity.MetaGeneral;
 
-  const userCommissions: {
-    [userId: string]: { [commissionId: number]: entity.Commission };
-  } = {};
+  const userPercent: number = metaData.userPercentage || 0.6;
 
-  const currentCommissions: {
-    [userId: string]: { [commissionId: number]: entity.Commission } | null;
-  } = {};
-
-  const newCommissions = await get2PCommissions(userPercent);
+  const newCommissions = await get2PCommissions(userPercent, db);
   const commissionsAltex = await getAltexCommissions(userPercent);
 
   // Merge commissions
@@ -249,6 +243,11 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
       ...commissionsAltex[userId],
     };
   }
+
+  const userCommissions: entity.UserCommissions = {};
+  const currentCommissions: {
+    [userId: string]: { [commissionId: number]: entity.Commission } | null;
+  } = {};
 
   for (const userId in newCommissions) {
     for (const commissionId in newCommissions[userId]) {
@@ -325,12 +324,35 @@ const shouldUpdateCommission = (
   );
 };
 
-const get2PCommissions = async (userPercent: number) => {
+const get2PCommissions = async (
+  userPercent: number,
+  db: admin.firestore.Firestore,
+) => {
   const commissions: {
     [userId: string]: { [commissionId: number]: entity.Commission };
   } = {};
 
-  const commissions2p: Commission[] = await getCommissions2P();
+  const meta = await db.doc('meta/2performant').get();
+  const metaData = meta.data() as entity.MetaTwoPerformant;
+
+  const commissions2p: Commission[] = await getCommissions2P(
+    metaData.commissionsTwoPSince
+      ? metaData.commissionsTwoPSince.toDate()
+      : undefined,
+  );
+
+  // Update the since date for 2p
+  const oldestPendingComm = commissions2p
+    .reverse()
+    .find((c2p) => c2p.status === 'pending' || c2p.status === 'accepted');
+  if (oldestPendingComm) {
+    await meta.ref.update(<entity.MetaTwoPerformant>{
+      commissionsTwoPSince: admin.firestore.Timestamp.fromMillis(
+        Date.parse(oldestPendingComm.createdAt),
+      ),
+    });
+  }
+
   await asyncForEach(commissions2p, async (commission) => {
     const userIdOfCommission = getUserFor2PCommission(commission);
     const commissionToBeSaved = await toCommissionEntity(

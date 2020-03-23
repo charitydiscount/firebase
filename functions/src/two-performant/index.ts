@@ -12,7 +12,15 @@ import {
   USER_LINK_PLACEHOLDER,
   PROGRAM_LINK_PLACEHOLDER,
 } from '../util';
-import { programsFromJson, toProgramEntity, Program } from './serializers';
+import {
+  programsFromJson,
+  toProgramEntity,
+  Program,
+  ProgramsResponse,
+  PromotionsResponse,
+  Pagination,
+} from './serializers';
+import moment = require('moment');
 
 interface AuthHeaders {
   accessToken: string;
@@ -67,7 +75,7 @@ export async function getPromotions(
 ): Promise<Promotion[]> {
   let promotions: Promotion[] = [];
   try {
-    promotions = await getAllEntities(
+    promotions = await getAllEntities<Promotion, PromotionsResponse>(
       get2PPromotionDataForPage,
       'advertiserPromotions',
       { paginationInRoot: true },
@@ -86,8 +94,11 @@ export async function getPromotions(
   return promotions;
 }
 
-async function get2PPromotionDataForPage(page: number): Promise<any> {
-  const url = `https://api.2performant.com/affiliate/advertiser_promotions?filter[affrequest_status]=accepted&page=${page}&perpage=${perPage}`;
+async function get2PPromotionDataForPage(
+  page: number,
+  localPerPage: number,
+): Promise<any> {
+  const url = `https://api.2performant.com/affiliate/advertiser_promotions?filter[affrequest_status]=accepted&page=${page}&perpage=${localPerPage}`;
   const twoPResponse = await fetchTwoP(url, authHeaders);
   const respBody = await twoPResponse.json();
   authHeaders.accessToken = twoPResponse.headers.get('access-token') || '';
@@ -97,10 +108,19 @@ async function get2PPromotionDataForPage(page: number): Promise<any> {
 /**
  * Get the 2Performant affiliate commissions
  */
-export async function getCommissions2P(): Promise<Commission[]> {
-  const commissions = await getAllEntities<Commission>(
+export async function getCommissions2P(since?: Date): Promise<Commission[]> {
+  const commissions = await getAllEntities<Commission, CommissionsResponse>(
     getCommissionsForPage,
     'commissions',
+    {
+      params: '&sort[date]=desc',
+      stopWhen: (comResponse) =>
+        (since &&
+          comResponse.commissions.find((comm) =>
+            moment(comm.createdAt).isBefore(moment(since)),
+          ) !== null) ||
+        false,
+    },
   );
   commissions.forEach((c) => (c.source = '2p'));
   return commissions;
@@ -128,21 +148,15 @@ async function fetchTwoP(url: string, authData: AuthHeaders) {
 }
 
 async function getCommissionsForPage(
-  authData: AuthHeaders,
   page: number,
   commissionsPerPage: number,
-  params: string,
+  params?: string,
 ): Promise<CommissionsResponse> {
   const url = `https://api.2performant.com/affiliate/commissions?page=${page}&perpage=${commissionsPerPage}${params}`;
-  const twoPResponse = await fetchTwoP(url, authData);
+  const twoPResponse = await fetchTwoP(url, authHeaders);
   if (twoPResponse.status === 429) {
     await sleep(5 * 61 * 1000);
-    return await getCommissionsForPage(
-      authData,
-      page,
-      commissionsPerPage,
-      params,
-    );
+    return await getCommissionsForPage(page, commissionsPerPage, params);
   } else if (twoPResponse.status !== 200) {
     throw twoPResponse.statusText;
   } else {
@@ -152,18 +166,22 @@ async function getCommissionsForPage(
   }
 }
 
-interface GetterOptions {
+interface GetterOptions<T> {
   params?: string;
-  stopWhen?: Function;
+  stopWhen?: (responseForPage: T) => boolean;
   perPage?: number;
   paginationInRoot?: boolean;
 }
 
-async function getAllEntities<T>(
-  pageRetriever: Function,
+async function getAllEntities<T1, T2>(
+  pageRetriever: (
+    page: number,
+    perPage: number,
+    params?: string,
+  ) => Promise<T2>,
   relevantKey: string,
-  options?: GetterOptions,
-): Promise<T[]> {
+  options?: GetterOptions<T2>,
+): Promise<T1[]> {
   if (!authHeaders) {
     authHeaders = await getAuthHeaders();
   }
@@ -173,7 +191,6 @@ async function getAllEntities<T>(
   let responseForPage;
   try {
     responseForPage = await pageRetriever(
-      authHeaders,
       1,
       localPerPage,
       options !== undefined ? options.params : undefined,
@@ -182,6 +199,11 @@ async function getAllEntities<T>(
     authHeaders = await getAuthHeaders();
   }
 
+  if (!responseForPage) {
+    return [];
+  }
+
+  //@ts-ignore
   let entities = responseForPage[relevantKey];
 
   if (options) {
@@ -193,21 +215,26 @@ async function getAllEntities<T>(
     }
   }
 
-  const pagination =
-    options && options.paginationInRoot === true
-      ? responseForPage.pagination
-      : responseForPage.metadata.pagination;
+  let pagination: Pagination;
+  if (options && options.paginationInRoot === true) {
+    //@ts-ignore
+    pagination = responseForPage.pagination;
+  } else {
+    //@ts-ignore
+    pagination = responseForPage.metadata.pagination;
+  }
 
   const totalPages = pagination.pages;
   const firstPage = pagination.currentPage;
 
   for (let page = firstPage + 1; page <= totalPages; page++) {
     responseForPage = await pageRetriever(
-      authHeaders,
       page,
       localPerPage,
       options !== undefined ? options.params : undefined,
     );
+
+    //@ts-ignore
     entities = entities.concat(responseForPage[relevantKey]);
     if (options) {
       if (
@@ -228,7 +255,10 @@ async function getAllEntities<T>(
 export async function getPrograms() {
   let programs: Program[] = [];
   try {
-    programs = await getAllEntities(getProgramsForPage, 'programs');
+    programs = await getAllEntities<Program, ProgramsResponse>(
+      getProgramsForPage,
+      'programs',
+    );
   } catch (e) {
     console.log('Failed to read 2p programs: ' + e.message);
   }
@@ -249,9 +279,9 @@ export async function getPrograms() {
   });
 }
 
-async function getProgramsForPage(authData: AuthHeaders, page: number) {
-  const url = `https://api.2performant.com/affiliate/programs?filter[relation]=accepted&page=${page}&perpage=${perPage}`;
-  const twoPResponse = await fetchTwoP(url, authData);
+async function getProgramsForPage(page: number, localPerPage: number) {
+  const url = `https://api.2performant.com/affiliate/programs?filter[relation]=accepted&page=${page}&perpage=${localPerPage}`;
+  const twoPResponse = await fetchTwoP(url, authHeaders);
   const respBody = await twoPResponse.json();
   authHeaders.accessToken = twoPResponse.headers.get('access-token') || '';
   return programsFromJson(respBody);

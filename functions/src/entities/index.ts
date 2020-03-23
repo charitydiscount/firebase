@@ -166,3 +166,17 @@ export interface ReferralRequest {
   valid: boolean | undefined;
   reason: string | undefined;
 }
+
+export interface MetaGeneral {
+  bonusPercentage: number;
+  userPercentage: number;
+}
+
+export interface MetaTwoPerformant {
+  uniqueCode: string;
+  commissionsTwoPSince: firestore.Timestamp | undefined;
+}
+
+export interface UserCommissions {
+  [userId: string]: { [commissionId: number]: Commission };
+}

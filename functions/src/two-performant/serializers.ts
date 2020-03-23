@@ -161,6 +161,11 @@ export interface SellingCountry {
   currency: Currency;
 }
 
+export interface PromotionsResponse {
+  advertiser_promotions: {};
+  pagination: Pagination;
+}
+
 export const programsFromJson = (json: any): ProgramsResponse => {
   //@ts-ignore
   return camelcaseKeys(json, { deep: true });

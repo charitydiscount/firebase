@@ -1,7 +1,7 @@
 import puppeteer = require('puppeteer');
 import { config } from 'firebase-functions';
 import moment = require('moment');
-import { Commission } from '../entities';
+import { Commission, UserCommissions } from '../entities';
 import { firestore } from 'firebase-admin';
 import { roundAmount } from '../exchange';
 import { chunk } from 'lodash';
@@ -75,11 +75,10 @@ const chunkCommissions = (
   userPercentage: number,
   altexConfig: AltexConfig,
 ): { [userId: string]: { [commissionId: number]: Commission } } => {
-  const commissions: {
-    [userId: string]: { [commissionId: number]: Commission };
-  } = {};
+  const commissions: UserCommissions = {};
 
   let originIdSalt = 0;
+  let previousDate: moment.Moment;
 
   const chunkedCommissions = chunk(rawCommissions, 9).reverse();
 
@@ -89,8 +88,16 @@ const chunkCommissions = (
     if (!userId || !commissionDate) {
       continue;
     }
+
+    //@ts-ignore
+    if (previousDate !== undefined && previousDate.isSame(commissionDate)) {
+      originIdSalt++;
+    } else {
+      originIdSalt = 0;
+    }
+    previousDate = commissionDate.clone();
+
     const commissionId = commissionDate.valueOf() + originIdSalt;
-    originIdSalt++;
 
     const commissionAmount = parseFloat(rawCommission[6].replace(',', '.'));
     const saleAmount = parseFloat(rawCommission[4].replace(',', '.'));

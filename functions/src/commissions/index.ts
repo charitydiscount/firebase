@@ -66,7 +66,7 @@ const updateCommissionFromBucket = async (
   let relevantColumns: { csv: string; target: string }[];
   let linesToSkip = 0;
   let originIdSalt = 0;
-  if (source === 'altex') {
+  if (source === entity.Source.ALTEX) {
     linesToSkip = 5;
     relevantColumns = [
       {
@@ -151,7 +151,7 @@ const updateCommissionFromBucket = async (
 
           let programName = rawCommission.programName;
           let commissionStatus = rawCommission.status;
-          if (source === 'altex') {
+          if (source === entity.Source.ALTEX) {
             programName = 'Altex';
             commissionStatus = getAltexCommissionStatus(rawCommission);
           }
@@ -184,7 +184,7 @@ const updateCommissionFromBucket = async (
             updatedAt: admin.firestore.Timestamp.fromMillis(
               moment(rawCommission.date, 'DD.MM.YYYY').valueOf(),
             ),
-            source: source || '2p',
+            source: source || entity.Source.TWO_PERFORMANT,
           };
           if (rawCommission.reason && Array.isArray(rawCommission.reason)) {
             commission.reason = rawCommission.reason.join(' ');

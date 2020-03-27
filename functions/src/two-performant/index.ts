@@ -1,7 +1,7 @@
 import { config } from 'firebase-functions';
 import fetch = require('node-fetch');
 import camelcaseKeys = require('camelcase-keys');
-import { Promotion } from '../entities';
+import { Promotion, Source } from '../entities';
 import {
   CommissionsResponse,
   commissionsFromJson,
@@ -85,7 +85,7 @@ export async function getPromotions(
   }
 
   promotions.forEach((p: Promotion) => {
-    p.source = '2p';
+    p.source = Source.TWO_PERFORMANT;
     // @ts-ignore
     p.programId = p.program.id;
     p.affiliateUrl = buildAffiliateUrl(affiliateCode, p.landingPageLink);
@@ -122,7 +122,7 @@ export async function getCommissions2P(since?: Date): Promise<Commission[]> {
         false,
     },
   );
-  commissions.forEach((c) => (c.source = '2p'));
+  commissions.forEach((c) => (c.source = Source.TWO_PERFORMANT));
   return commissions;
 }
 
@@ -271,7 +271,7 @@ export async function getPrograms() {
     if (!twoPP.enableSales) {
       program.defaultSaleCommissionRate = null;
     }
-    program.source = '2p';
+    program.source = Source.TWO_PERFORMANT;
     program.order = index * 100;
     program.affiliateUrl = buildAffiliateUrl(twoPCode, program.mainUrl);
 
@@ -290,7 +290,7 @@ async function getProgramsForPage(page: number, localPerPage: number) {
 export const getAffiliateCodes = () => {
   return [
     {
-      platform: '2p',
+      platform: Source.TWO_PERFORMANT,
       code: authHeaders.uniqueCode,
     },
   ];

@@ -180,3 +180,9 @@ export interface MetaTwoPerformant {
 export interface UserCommissions {
   [userId: string]: { [commissionId: number]: Commission };
 }
+
+export enum Source {
+  TWO_PERFORMANT = '2p',
+  ALTEX = 'altex',
+  REFERRAL = 'referral',
+}

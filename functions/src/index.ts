@@ -14,7 +14,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 const db = admin.firestore();
 
 import { processTx } from './tx';
-import { TxStatus, Commission } from './tx/types';
+import { TxStatus } from './tx/types';
 import { updateProgramRating } from './rating';
 import { createWallet, createUser, handleReferral } from './user';
 import { handleNewOtp } from './otp';
@@ -26,6 +26,7 @@ import authApp from './auth';
 import { updatePrograms as refreshPrograms } from './programs/program';
 import { updatePromotions as updateProms } from './programs/promotions';
 import adminApp from './admin';
+import { Commission } from './entities';
 
 /**
  * Create the user wallet document when a new user registers

@@ -170,6 +170,7 @@ export interface ReferralRequest {
 export interface MetaGeneral {
   bonusPercentage: number;
   userPercentage: number;
+  referralPercentage: number;
 }
 
 export interface MetaTwoPerformant {
@@ -177,9 +178,15 @@ export interface MetaTwoPerformant {
   commissionsTwoPSince: firestore.Timestamp | undefined;
 }
 
-export interface UserCommissions {
-  [userId: string]: { [commissionId: number]: Commission };
+export interface CommissionEntry {
+  [commissionId: number]: Commission;
 }
+
+export type UserCommissions = {
+  [userId: string]: CommissionEntry;
+} & {
+  userId?: string;
+};
 
 export enum Source {
   TWO_PERFORMANT = '2p',

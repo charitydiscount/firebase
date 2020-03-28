@@ -62,8 +62,7 @@ export const handleReferral = async (
 
   // Ensure that the referred user is recently created
   if (
-    moment().diff(moment(newUser.metadata.creationTime)) >
-    moment.duration(1, 'hour').milliseconds()
+    moment().diff(moment(newUser.metadata.creationTime)) > 3600000 //1 hour
   ) {
     console.log(`User not recent enough`);
     return requestSnap.ref.update({

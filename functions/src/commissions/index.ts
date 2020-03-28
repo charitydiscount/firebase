@@ -403,7 +403,7 @@ interface CurrentCommissions {
   [userId: string]: entity.CommissionEntry | null;
 }
 
-const generateReferralCommission = (
+export const generateReferralCommission = (
   originalCommission: entity.Commission,
   referralPercentage: number,
 ): entity.Commission => {

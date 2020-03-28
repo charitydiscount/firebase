@@ -162,15 +162,15 @@ const validateNewCommission = (data: any): CheckResult => {
 
 const validateCommission = (data: any): CheckResult => {
   return checkObjectWithProperties(data, [
-    { key: 'originalAmount', type: 'number' },
+    { key: 'originalAmount', type: 'number', optional: true },
     { key: 'amount', type: 'number' },
-    { key: 'originalCurrency', type: 'string' },
-    { key: 'currency', type: 'string' },
-    { key: 'shopId', type: 'string' },
-    { key: 'status', type: 'string', optional: true },
-    { key: 'originId', type: 'number' },
+    { key: 'originalCurrency', type: 'string', optional: true },
+    { key: 'currency', type: 'string', optional: true },
+    { key: 'shopId', type: 'string', optional: true },
+    { key: 'status', type: 'string' },
+    { key: 'originId', type: 'number', optional: true },
     { key: 'reason', type: 'string', optional: true },
-    { key: 'program', type: 'object' },
+    { key: 'program', type: 'object', optional: true },
   ]);
 };
 

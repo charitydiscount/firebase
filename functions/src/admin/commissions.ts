@@ -96,6 +96,7 @@ export const createUserCommission = async (req: Request, res: Response) => {
     const referralCommission = generateReferralCommission(
         newUserCommission,
         referralPercentage,
+        referral.userId
     );
     await _db
         .collection('commissions')

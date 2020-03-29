@@ -13,6 +13,7 @@ export interface Commission {
   originId: number;
   reason?: string;
   program: CommissionProgram;
+  referralId?: string;
   source: string;
 }
 

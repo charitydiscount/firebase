@@ -290,6 +290,7 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
       const referralCommission = generateReferralCommission(
         referredCommissions[commissionid],
         referralPercentage,
+        referral.userId
       );
 
       usersCommissions[referral.ownerId] = {
@@ -406,9 +407,11 @@ interface CurrentCommissions {
 export const generateReferralCommission = (
   originalCommission: entity.Commission,
   referralPercentage: number,
+  referralId: string
 ): entity.Commission => {
   return {
     ...originalCommission,
+    referralId: referralId,
     amount: originalCommission.amount * referralPercentage,
     source: entity.Source.REFERRAL,
   };

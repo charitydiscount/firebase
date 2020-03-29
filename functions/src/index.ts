@@ -199,7 +199,7 @@ const commissionsInterval =
 export const updateCommissionsFromApi = functions
   .region('europe-west1')
   .runWith({
-    memory: '1GB',
+    memory: '512MB',
   })
   .pubsub.schedule(`every ${commissionsInterval}`)
   .timeZone('Europe/Bucharest')

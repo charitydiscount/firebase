@@ -1,0 +1,37 @@
+language: node_js
+node_js:
+  - 10
+branches:
+  only:
+    - master
+    - develop
+cache: npm
+install:
+  - cd functions
+  - npm install
+  - cd ..
+script:
+  - cd functions
+  - npm run build
+  - cd ..
+deploy:
+  - provider: firebase
+    project: charitydiscount
+    on:
+      branch: master
+    skip_cleanup: true
+    token:
+      secure: iRjSGOVuY66/LKwm1zCllfUhzlKMQXPQl42AOyPxDsE7u8Msy5NGIXLVliIWwTRx6ADRHOIsXI6ZE8euaunKL8MYdbRiE/9zgYWWRoc62GMIePTfpmZ3G05gmh+agmqY8aksicjUZHXeGjsOJWdmL09Ezi/U0r9GfYKNtY3KG324zdXL68RtGpXV0s5pX2nRCkdro6sjW6UOp1rz5VHVznGAAwySemnIKlt+xIX1m95RXAGFO8wtMg3uK9U6cwfchYMtuhObzf4jKa6NziTDFeYzWvC9Kd3Zk7jcn9/m8cwehQYUujkLgzhqPEUfViSoL85YQMvDOOa8X653HDehU5XD5H/s+SpgDUyZ77xcbeIyND7NSET875DcxDRJB4cxdy81kgPGuWXu3LXNzcanSjO1MsY4FiUEqC9FKtmqytMUdkqArWnXWC5FPEKwHy6OjFViu52mOQqEgAYzNLRCisFnFBd9vjhCsHtkGLooY1MWgoPsv2SCUwu5S2Ze2JmTOqkSeeRvGtUMLlf5NjaIX9FoFP09fQPUIJuXT7S9QXeXc4o+B9ci/MKIo2W2quXVQKOaq+FAHyBSHILcdx249Vh0Egp9LBTP9+pha5gEMwL1W/GDKsgKiPYg/nggFyRTVmkIEH/pVZkIQdjoHwI1quiQRXoqPyG3AS8GzrxLzU4=
+    edge: true
+    only: functions
+    force: true
+  - provider: firebase
+    project: charitydiscount-test
+    on:
+      branch: develop
+    skip_cleanup: true
+    token:
+      secure: cPtRBVILygr5n/agwyFm0tgoMafPUO3zp2Yo1FYsiPjPKpZHrcs3XSSH9hLneVjVQae7FsfV436yrep8pPScDzRlCBFF1WB+xJ48qa0Lp939WMDy2xTgtOMaUcIG3sV404YbOpxIzQ1yCJ3VbMygqbkYOLR3LQozHjp5xLKJZ2sz9VlepoLvX+c6TPOj5Md7kwvSu6zoIOrtZZ/ePAp2R36dk7zt2DtOuOhsVkin1EbBD9AE/vIJj+ZCpniYat1AgwPJ47RTd5tOnRUBj9izETtiy2PQQs2PijNT3Z2oeJUjtwzC7cDf6fSxsNiVrBv/NFu1CPgEXPsgXKHWbzqxlOEshJnwldmg7gyGCbehRW6fFQDuDgHwFqRr2XU4Rm2vqmmrv3oCA4Z1vHYoSBvcHdqgYuucN+DB2zg+vHVMCVr1hwiqcjFUME1lvAHFNftxL98+dKDqMWYNv4PeP4m/P/nu2DxFcK0QOb2CK2eQe9OoVHvlF+HestNOAsgssziFfFQBJBeipKm+tEpfuOPeOj8tKps/WdIjIQoa6HkXHmXoK5yUC+tikGLQNa8sQixGTi7q9eOP9J1AQw0z4fYEmCSCK+7JKuzXdNSTQ6wq9/pBsEMRNBLLiZ7L3UK20H0RNiNVxe/osXglB3mMTPanO2GEiQCXzK8p+83iv10kDbw=
+    edge: true
+    only: functions
+    force: true

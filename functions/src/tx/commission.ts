@@ -1,6 +1,7 @@
-import { Commission, UserTransaction, TxType } from './types';
+import { UserTransaction, TxType } from './types';
 import { firestore } from 'firebase-admin';
 import { asyncForEach, sendNotification } from '../util';
+import { Commission, Source } from '../entities';
 
 /**
  * Update the cashback of the user based on the change in commissions
@@ -64,10 +65,18 @@ export const updateWallet = async (
       userDevices = await getUserDeviceTokens(db, userId);
     }
     if (userDevices && userDevices.length > 0) {
+      const title =
+        commission.source === Source.REFERRAL
+          ? 'Un nou bonus a fost înregistrat💸'
+          : 'Cumpărătură înregistrată!🛒';
+      const body =
+        commission.source === Source.REFERRAL
+          ? 'Invitatul tău tocmai a cumpărat prin CharitDiscount, adică un nou bonus pentru tine'
+          : `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`;
       await sendNotification(
         {
-          title: 'Felicitări!🛒',
-          body: `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`,
+          title,
+          body,
           type: TxType.COMMISSION,
         },
         userDevices,
@@ -82,10 +91,18 @@ export const updateWallet = async (
         userDevices = await getUserDeviceTokens(db, userId);
       }
       if (userDevices && userDevices.length > 0) {
+        const title =
+          commission.source === Source.REFERRAL
+            ? 'Cashback bonus primit💸'
+            : 'Cashback primit!💰';
+        const body =
+          commission.source === Source.REFERRAL
+            ? `${commission.amount}${commission.currency} bonus au fost adăugați portofelului tău`
+            : `${commission.amount}${commission.currency} au fost adăugați portofelului tău`;
         await sendNotification(
           {
-            title: 'Cashback primit!💰',
-            body: `${commission.amount}${commission.currency} au fost adăugați portofelului tău`,
+            title,
+            body,
             type: TxType.COMMISSION,
           },
           userDevices,
@@ -107,13 +124,22 @@ const getTxFromCommissions = (
   userId: string,
 ): UserTransaction[] => {
   return unprocessedCommissions.map((comm) => {
+    let txType: TxType;
+    if (comm.source === Source.REFERRAL) {
+      txType = TxType.REFERRAL;
+    } else {
+      txType = TxType.COMMISSION;
+    }
     return <UserTransaction>{
       amount: comm.amount,
       currency: comm.currency,
       date: comm.createdAt,
       sourceTxId: comm.originId.toString(),
-      target: { id: userId, name: comm.shopId.toString() },
-      type: TxType.COMMISSION,
+      target: {
+        id: userId,
+        name: comm.shopId ? comm.shopId.toString() : comm.program.name,
+      },
+      type: txType,
       userId: userId,
     };
   });

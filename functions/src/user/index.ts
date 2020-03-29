@@ -1,7 +1,7 @@
 import { firestore, auth } from 'firebase-admin';
 import { ReferralRequest, Referral } from '../entities';
 import { DocumentSnapshot } from 'firebase-functions/lib/providers/firestore';
-// import moment = require('moment');
+import moment = require('moment');
 
 export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
   db
@@ -61,16 +61,15 @@ export const handleReferral = async (
   }
 
   // Ensure that the referred user is recently created
-  // if (
-  //   moment().diff(moment(newUser.metadata.creationTime)) >
-  //   moment.duration(1, 'hour').milliseconds()
-  // ) {
-  //   console.log(`User not recent enough`);
-  //   return requestSnap.ref.update({
-  //     valid: false,
-  //     reason: 'User not recent enough',
-  //   });
-  // }
+  if (
+    moment().diff(moment(newUser.metadata.creationTime)) > 3600000 //1 hour
+  ) {
+    console.log(`User not recent enough`);
+    return requestSnap.ref.update({
+      valid: false,
+      reason: 'User not recent enough',
+    });
+  }
 
   // Get the user who's referral code is used
   let referralUser: auth.UserRecord;
@@ -94,7 +93,7 @@ export const handleReferral = async (
     ownerId: referralUser.uid,
     userId: newUser.uid,
     name: newUser.displayName,
-    photoUrl: newUser.photoURL,
+    photoUrl: newUser.photoURL || null,
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
 };

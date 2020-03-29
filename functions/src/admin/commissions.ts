@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import * as admin from 'firebase-admin';
 import { checkObjectWithProperties, CheckResult } from '../checks';
-import { Commission } from '../entities';
 import { BASE_CURRENCY, convertAmount, roundAmount } from '../exchange';
 import { TxStatus } from '../tx/types';
+import * as entity from "../entities";
+import { generateReferralCommission } from "../commissions";
 
 const _db = admin.firestore();
 
@@ -56,6 +57,7 @@ export const createUserCommission = async (req: Request, res: Response) => {
 
   const meta = await _db.doc('meta/general').get();
   const userPercent: number = meta.data()!.userPercentage || 0.6;
+  const referralPercentage = meta.data()!.referralPercentage || 0.1;
 
   let userAmount = req.body.originalAmount * userPercent;
   let currency = req.body.originalCurrency;
@@ -65,7 +67,7 @@ export const createUserCommission = async (req: Request, res: Response) => {
     currency = conversionResult.currency;
   }
   const commissionid = req.body.originId || Date.now();
-  const newUserCommission: Commission = {
+  const newUserCommission: entity.Commission = {
     originalAmount: roundAmount(req.body.originalAmount),
     saleAmount: 0,
     originalCurrency: req.body.originalCurrency,
@@ -81,6 +83,37 @@ export const createUserCommission = async (req: Request, res: Response) => {
   };
 
   console.log(`New commission: ${newUserCommission.originId}`);
+
+  // Look for the user who referred the current user
+  const referrals = await _db
+      .collection('referrals')
+      .where('userId', '==', user.uid)
+      .get();
+
+  if (!referrals.empty) {
+    // Create commissions for referrals if any
+    const referral = referrals.docs[0].data() as entity.Referral;
+    const referralCommission = generateReferralCommission(
+        newUserCommission,
+        referralPercentage,
+        referral.userId
+    );
+    await _db
+        .collection('commissions')
+        .doc(referral.ownerId)
+        .set(
+            {
+              [commissionid]: {
+                ...referralCommission,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              },
+              userId: referral.ownerId,
+            },
+            {merge: true},
+        );
+    console.log(`New referral commission: ${referralCommission.originId} for user: ${referral.ownerId}`);
+  }
 
   const saveResult = await _db
     .collection('commissions')
@@ -117,6 +150,34 @@ export const updateUserCommission = async (req: Request, res: Response) => {
     user = await admin.auth().getUser(req.params.userId);
   } catch (e) {
     return res.status(404).json('User not found');
+  }
+
+  // Look for the user who referred the current user
+  const referrals = await _db
+      .collection('referrals')
+      .where('userId', '==', user.uid)
+      .get();
+
+  if (!referrals.empty) {
+    // Update commissions for referrals if any
+    const referral = referrals.docs[0].data() as entity.Referral;
+    const meta = await _db.doc('meta/general').get();
+    const referralPercentage = meta.data()!.referralPercentage || 0.1;
+
+    await _db
+        .collection('commissions')
+        .doc(referral.ownerId)
+        .set(
+            {
+              [req.params.commissionId]: {
+                status: req.body.status,
+                reason: req.body.reason || '',
+                amount: req.body.amount * referralPercentage,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              },
+            },
+            {merge: true},
+        );
   }
 
   const saveResult = await _db

@@ -7,6 +7,9 @@ service cloud.firestore {
     match /cases/{caseId} {
       allow read: if true;
     }
+    match /contact/{userId} {
+      allow create: if isSignedIn();
+    }
     match /favoriteShops/{userId} {
     	allow read, write: if belongsTo(userId);
       allow create: if isSignedIn();
@@ -18,6 +21,14 @@ service cloud.firestore {
     match /users/{userId} {
     	allow read, write: if belongsTo(userId);
       allow create: if isSignedIn();
+      
+      match /tokens/{tokenId} {
+        allow read, write: if belongsTo(userId);
+      }
+      
+      match /accounts/{iban} {
+        allow read, write: if belongsTo(userId);
+      }
     }
     match /points/{userId} {
     	allow read: if belongsTo(userId);
@@ -39,6 +50,18 @@ service cloud.firestore {
     match /otps/{userId} {
       allow read: if belongsTo(userId);
       allow update: if belongsTo(userId);
+    }
+    match /commissions/{userId} {
+      allow read: if belongsTo(userId);
+      allow write: if false;
+    }
+    match /referrals/{userId} {
+      allow read: if belongsTo(userId);
+      allow write: if false;
+    }
+    match /referral-requests/{reqId} {
+      allow read, write: if false;
+      allow create: if isSignedIn();
     }
   }
 }

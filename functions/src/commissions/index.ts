@@ -66,7 +66,7 @@ const updateCommissionFromBucket = async (
   let relevantColumns: { csv: string; target: string }[];
   let linesToSkip = 0;
   let originIdSalt = 0;
-  if (source === 'altex') {
+  if (source === entity.Source.ALTEX) {
     linesToSkip = 5;
     relevantColumns = [
       {
@@ -151,7 +151,7 @@ const updateCommissionFromBucket = async (
 
           let programName = rawCommission.programName;
           let commissionStatus = rawCommission.status;
-          if (source === 'altex') {
+          if (source === entity.Source.ALTEX) {
             programName = 'Altex';
             commissionStatus = getAltexCommissionStatus(rawCommission);
           }
@@ -184,7 +184,7 @@ const updateCommissionFromBucket = async (
             updatedAt: admin.firestore.Timestamp.fromMillis(
               moment(rawCommission.date, 'DD.MM.YYYY').valueOf(),
             ),
-            source: source || '2p',
+            source: source || entity.Source.TWO_PERFORMANT,
           };
           if (rawCommission.reason && Array.isArray(rawCommission.reason)) {
             commission.reason = rawCommission.reason.join(' ');
@@ -231,7 +231,8 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
   const meta = await db.doc('meta/general').get();
   const metaData = meta.data() as entity.MetaGeneral;
 
-  const userPercent: number = metaData.userPercentage || 0.6;
+  const userPercent = metaData.userPercentage || 0.6;
+  const referralPercentage = metaData.referralPercentage || 0.1;
 
   const newCommissions = await get2PCommissions(userPercent, db);
   const commissionsAltex = await getAltexCommissions(userPercent);
@@ -244,11 +245,10 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     };
   }
 
-  const userCommissions: entity.UserCommissions = {};
-  const currentCommissions: {
-    [userId: string]: { [commissionId: number]: entity.Commission } | null;
-  } = {};
+  const usersCommissions: entity.UserCommissions = {};
+  const currentCommissions: CurrentCommissions = {};
 
+  // Prepare the new/updated commissions in the internal format
   for (const userId in newCommissions) {
     for (const commissionId in newCommissions[userId]) {
       const commissionToBeSaved = newCommissions[userId][commissionId];
@@ -262,16 +262,47 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
       if (
         shouldUpdateCommission(currentCommissions[userId], commissionToBeSaved)
       ) {
-        userCommissions[userId] = {
-          ...userCommissions[userId],
+        usersCommissions[userId] = {
+          ...usersCommissions[userId],
           ...{ [commissionToBeSaved.originId]: commissionToBeSaved },
         };
       }
     }
   }
 
+  // Create commissions for referrals if any
+  for (const userId in usersCommissions) {
+    // Look for the user who referred the current user
+    const referrals = await db
+      .collection('referrals')
+      .where('userId', '==', userId)
+      .get();
+
+    if (referrals.empty) {
+      // the current user was not invited by anyone
+      continue;
+    }
+    const referredCommissions = usersCommissions[userId];
+    const referral = referrals.docs[0].data() as entity.Referral;
+    // const currentReferralCommissions: CurrentCommissions = {};
+    for (const commissionid in referredCommissions) {
+      // Create the resulting referral commission
+      const referralCommission = generateReferralCommission(
+        referredCommissions[commissionid],
+        referralPercentage,
+        referral.userId
+      );
+
+      usersCommissions[referral.ownerId] = {
+        ...usersCommissions[referral.ownerId],
+        ...{ [referralCommission.originId]: referralCommission },
+      };
+    }
+  }
+
+  // Save the commissions
   const promises: Promise<any>[] = [];
-  for (const userId in userCommissions) {
+  for (const userId in usersCommissions) {
     promises.push(
       db
         .collection('commissions')
@@ -279,7 +310,7 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
         .set(
           {
             userId,
-            ...userCommissions[userId],
+            ...usersCommissions[userId],
           },
           { merge: true },
         ),
@@ -292,7 +323,7 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
 const getCurrentUserCommissions = async (
   db: admin.firestore.Firestore,
   userId: string,
-) => {
+): Promise<entity.CommissionEntry | null> => {
   const userCommSnap = await db
     .collection('commissions')
     .doc(userId)
@@ -302,7 +333,7 @@ const getCurrentUserCommissions = async (
   } else {
     const snapData = userCommSnap.data();
     if (snapData) {
-      return snapData;
+      return snapData as entity.CommissionEntry;
     } else {
       return null;
     }
@@ -367,6 +398,23 @@ const get2PCommissions = async (
   });
 
   return commissions;
+};
+
+interface CurrentCommissions {
+  [userId: string]: entity.CommissionEntry | null;
+}
+
+export const generateReferralCommission = (
+  originalCommission: entity.Commission,
+  referralPercentage: number,
+  referralId: string
+): entity.Commission => {
+  return {
+    ...originalCommission,
+    referralId: referralId,
+    amount: originalCommission.amount * referralPercentage,
+    source: entity.Source.REFERRAL,
+  };
 };
 
 export default { bucket, updateCommissionFromBucket };

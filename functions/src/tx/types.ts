@@ -5,6 +5,7 @@ export enum TxType {
   CASHOUT = 'CASHOUT',
   BONUS = 'BONUS',
   COMMISSION = 'COMMISSION',
+  REFERRAL = 'REFERRAL',
 }
 
 export enum TxStatus {

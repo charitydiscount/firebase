@@ -86,7 +86,7 @@ async function getProgramsIncludingRemoved(
   Object.keys(currentPrograms).forEach((programUniqueCode) => {
     const currentProgram = currentPrograms[programUniqueCode];
     if (
-      currentProgram.source === '2p' &&
+      currentProgram.source === entity.Source.TWO_PERFORMANT &&
       !programs.find(
         (newProgram) => newProgram.uniqueCode === currentProgram.uniqueCode,
       )

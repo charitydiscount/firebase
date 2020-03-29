@@ -1,7 +1,7 @@
 import puppeteer = require('puppeteer');
 import { config } from 'firebase-functions';
 import moment = require('moment');
-import { Commission, UserCommissions } from '../entities';
+import { Commission, UserCommissions, Source } from '../entities';
 import { firestore } from 'firebase-admin';
 import { roundAmount } from '../exchange';
 import { chunk } from 'lodash';
@@ -114,7 +114,7 @@ const chunkCommissions = (
       originalCurrency: 'RON',
       amount: roundAmount(commissionAmount * userPercentage),
       currency: 'RON',
-      source: 'altex',
+      source: Source.ALTEX,
       originId: commissionId,
       program: {
         name: altexConfig.name,

@@ -2,17 +2,15 @@ import { firestore, auth } from 'firebase-admin';
 import { ReferralRequest, Referral } from '../entities';
 import { DocumentSnapshot } from 'firebase-functions/lib/providers/firestore';
 import moment = require('moment');
+import { deleteUserData } from './delete';
 
 export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
-  db
-    .collection('users')
-    .doc(user.uid)
-    .create({
-      email: user.email,
-      name: user.displayName,
-      photoUrl: user.photoURL,
-      userId: user.uid,
-    });
+  db.collection('users').doc(user.uid).create({
+    email: user.email,
+    name: user.displayName,
+    photoUrl: user.photoURL,
+    userId: user.uid,
+  });
 
 export const createWallet = (db: firestore.Firestore, user: auth.UserRecord) =>
   db
@@ -100,3 +98,5 @@ export const handleReferral = async (
 
 const getUserForReferral = (referralRequest: ReferralRequest) =>
   auth().getUser(referralRequest.referralCode);
+
+export const handleUserDelete = deleteUserData;

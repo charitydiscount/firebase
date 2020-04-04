@@ -16,7 +16,12 @@ const db = admin.firestore();
 import { processTx } from './tx';
 import { TxStatus } from './tx/types';
 import { updateProgramRating } from './rating';
-import { createWallet, createUser, handleReferral } from './user';
+import {
+  createWallet,
+  createUser,
+  handleReferral,
+  handleUserDelete,
+} from './user';
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import searchApp from './search';
@@ -230,3 +235,11 @@ export const handleReferralRequest = functions
   .region('europe-west1')
   .firestore.document('referral-requests/{requestId}')
   .onCreate(async (snap, context) => handleReferral(db, snap));
+
+/**
+ * Remove all PII of the deleted user and donate any available cashback left
+ */
+export const onUserDelete = functions
+  .region('europe-west1')
+  .auth.user()
+  .onDelete(async (user) => handleUserDelete(db, user));

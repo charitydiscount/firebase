@@ -77,4 +77,4 @@ export const deleteUserData = async (
 };
 
 const deleteDoc = async (doc: firestore.DocumentReference) =>
-  doc.delete().catch(() => {});
+  doc.delete().catch();

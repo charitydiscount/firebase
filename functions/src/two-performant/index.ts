@@ -190,11 +190,7 @@ async function getAllEntities<T1, T2>(
 
   let responseForPage;
   try {
-    responseForPage = await pageRetriever(
-      1,
-      localPerPage,
-      options !== undefined ? options.params : undefined,
-    );
+    responseForPage = await pageRetriever(1, localPerPage, options?.params);
   } catch (e) {
     authHeaders = await getAuthHeaders();
   }
@@ -228,11 +224,7 @@ async function getAllEntities<T1, T2>(
   const firstPage = pagination.currentPage;
 
   for (let page = firstPage + 1; page <= totalPages; page++) {
-    responseForPage = await pageRetriever(
-      page,
-      localPerPage,
-      options !== undefined ? options.params : undefined,
-    );
+    responseForPage = await pageRetriever(page, localPerPage, options?.params);
 
     //@ts-ignore
     entities = entities.concat(responseForPage[relevantKey]);

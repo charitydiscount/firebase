@@ -318,7 +318,7 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     );
   }
 
-  const commissionsArray = entity.userCommissionsToArray(newCommissions);
+  const commissionsArray = entity.userCommissionsToArray(usersCommissions);
   if (commissionsArray.length > 0) {
     elastic
       .sendBulkRequest(elastic.buildBulkBodyForCommissions(commissionsArray))
@@ -372,9 +372,7 @@ const get2PCommissions = async (
   const metaData = meta.data() as entity.MetaTwoPerformant;
 
   const commissions2p: Commission[] = await getCommissions2P(
-    metaData.commissionsTwoPSince
-      ? metaData.commissionsTwoPSince.toDate()
-      : undefined,
+    metaData.commissionsTwoPSince?.toDate(),
   );
 
   // Update the since date for 2p

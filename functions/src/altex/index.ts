@@ -23,6 +23,7 @@ export const getAltexCommissions = async (userPercentage: number) => {
   }
   const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    timeout: 5000,
   });
   const page = await browser.newPage();
   await page.goto(altexConfig.site);

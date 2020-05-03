@@ -233,14 +233,18 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
   const referralPercentage = metaData.referralPercentage || 0.1;
 
   const newCommissions = await get2PCommissions(userPercent, db);
-  const commissionsAltex = await getAltexCommissions(userPercent);
+  try {
+    const commissionsAltex = await getAltexCommissions(userPercent);
 
-  // Merge commissions
-  for (const userId in commissionsAltex) {
-    newCommissions[userId] = {
-      ...newCommissions[userId],
-      ...commissionsAltex[userId],
-    };
+    // Merge commissions
+    for (const userId in commissionsAltex) {
+      newCommissions[userId] = {
+        ...newCommissions[userId],
+        ...commissionsAltex[userId],
+      };
+    }
+  } catch (e) {
+    console.log(e);
   }
 
   const usersCommissions: entity.UserCommissions = {};
@@ -314,13 +318,13 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     );
   }
 
-  elastic
-    .sendBulkRequest(
-      elastic.buildBulkBodyForCommissions(
-        entity.userCommissionsToArray(usersCommissions),
-      ),
-    )
-    .catch((e) => console.log(e));
+  const commissionsArray = entity.userCommissionsToArray(usersCommissions);
+  if (commissionsArray.length > 0) {
+    console.log(commissionsArray[0]);
+    elastic
+      .sendBulkRequest(elastic.buildBulkBodyForCommissions(commissionsArray))
+      .catch((e) => console.log(e));
+  }
 
   return promises;
 }

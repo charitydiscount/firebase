@@ -16,6 +16,7 @@ import { asyncForEach, isDev } from '../util';
 import { BASE_CURRENCY, roundAmount } from '../exchange';
 import { config } from 'firebase-functions';
 import { getAltexCommissionStatus, getAltexCommissions } from '../altex';
+import elastic from '../elastic';
 
 const bucket = {
   get name() {
@@ -49,10 +50,7 @@ const updateCommissionFromBucket = async (
 
   // Get the shops in order to retrieve the shop IDs
   const programs: entity.Program[] = [];
-  const programsSnap = await db
-    .collection('programs')
-    .doc('all')
-    .get();
+  const programsSnap = await db.collection('programs').doc('all').get();
   const programsData = <entity.ProgramSnapshot>programsSnap.data();
 
   for (const uniqueCode in programsData) {
@@ -284,13 +282,12 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     }
     const referredCommissions = usersCommissions[userId];
     const referral = referrals.docs[0].data() as entity.Referral;
-    // const currentReferralCommissions: CurrentCommissions = {};
     for (const commissionid in referredCommissions) {
       // Create the resulting referral commission
       const referralCommission = generateReferralCommission(
         referredCommissions[commissionid],
         referralPercentage,
-        referral.userId
+        referral.userId,
       );
 
       usersCommissions[referral.ownerId] = {
@@ -317,6 +314,14 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     );
   }
 
+  elastic
+    .sendBulkRequest(
+      elastic.buildBulkBodyForCommissions(
+        entity.userCommissionsToArray(usersCommissions),
+      ),
+    )
+    .catch((e) => console.log(e));
+
   return promises;
 }
 
@@ -324,10 +329,7 @@ const getCurrentUserCommissions = async (
   db: admin.firestore.Firestore,
   userId: string,
 ): Promise<entity.CommissionEntry | null> => {
-  const userCommSnap = await db
-    .collection('commissions')
-    .doc(userId)
-    .get();
+  const userCommSnap = await db.collection('commissions').doc(userId).get();
   if (!userCommSnap.exists) {
     return null;
   } else {
@@ -407,7 +409,7 @@ interface CurrentCommissions {
 export const generateReferralCommission = (
   originalCommission: entity.Commission,
   referralPercentage: number,
-  referralId: string
+  referralId: string,
 ): entity.Commission => {
   return {
     ...originalCommission,

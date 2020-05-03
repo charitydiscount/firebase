@@ -194,3 +194,16 @@ export enum Source {
   ALTEX = 'altex',
   REFERRAL = 'referral',
 }
+
+export function userCommissionsToArray(
+  userCommissions: UserCommissions,
+): Commission[] {
+  const commissions: Commission[] = [];
+  for (const userId in userCommissions) {
+    for (const commissionId in userCommissions[userId]) {
+      commissions.push(userCommissions[userId][commissionId]);
+    }
+  }
+
+  return commissions;
+}

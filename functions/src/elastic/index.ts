@@ -1,7 +1,7 @@
 import { Client } from '@elastic/elasticsearch';
 import { config } from 'firebase-functions';
 import { UserTransaction, TxType } from '../tx/types';
-import { Program } from '../entities';
+import { Program, Commission } from '../entities';
 import { flatMap, isDev } from '../util';
 
 const elasticConfig = config().elastic;
@@ -108,6 +108,16 @@ export function buildBulkBodyForPrograms(programs: Program[]) {
   );
 }
 
+export function buildBulkBodyForCommissions(commissions: Commission[]) {
+  return flatMap(
+    (commission: Commission) => [
+      { index: { _index: indeces.COMMISSIONS_INDEX, _id: commission.originId } },
+      commission,
+    ],
+    commissions,
+  );
+}
+
 function getIndexForTx(transaction: UserTransaction) {
   switch (transaction.type) {
     case TxType.BONUS:
@@ -128,4 +138,5 @@ export default {
   sendBulkRequest,
   buildBulkBodyForTx,
   buildBulkBodyForPrograms,
+  buildBulkBodyForCommissions,
 };

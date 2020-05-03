@@ -320,7 +320,6 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
 
   const commissionsArray = entity.userCommissionsToArray(newCommissions);
   if (commissionsArray.length > 0) {
-    console.log(commissionsArray[0]);
     elastic
       .sendBulkRequest(elastic.buildBulkBodyForCommissions(commissionsArray))
       .catch((e) => console.log(e.message));

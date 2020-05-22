@@ -15,6 +15,7 @@ searchEndpoints.use(middlewares.firebaseAuth);
 
 searchEndpoints.get('/', async (req, res) => {
   const hits = await elastic.searchPrograms(
+    //@ts-ignore
     req.query.query,
     req.query.exact || false,
   );
@@ -22,12 +23,14 @@ searchEndpoints.get('/', async (req, res) => {
 });
 searchEndpoints.get('/programs', async (req, res) => {
   const hits = await elastic.searchPrograms(
+    //@ts-ignore
     req.query.query,
     req.query.exact || false,
   );
   return res.json(hits);
 });
 searchEndpoints.get('/products', async (req, res) => {
+  //@ts-ignore
   const hits = await elastic.searchProducts(req.query.query, req.query);
   return res.json(hits);
 });

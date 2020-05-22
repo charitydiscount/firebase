@@ -356,7 +356,9 @@ const shouldUpdateCommission = (
     !currentUserCommissions[commissionToBeSaved.originId].updatedAt.isEqual(
       //@ts-ignore
       commissionToBeSaved.updatedAt,
-    )
+    ) ||
+    currentUserCommissions[commissionToBeSaved.originId].status !==
+      commissionToBeSaved.status
   );
 };
 

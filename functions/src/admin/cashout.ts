@@ -8,6 +8,7 @@ import { TxType } from '../tx/types';
  * @param res Express response
  */
 export const getWithdrawals = (req: Request, res: Response) =>
+  //@ts-ignore
   getTransactionRequests(res, TxType.CASHOUT, req.query.status);
 
 /**
@@ -19,6 +20,7 @@ export const getUserWithdrawals = (req: Request, res: Response) =>
   getTransactionRequests(
     res,
     TxType.CASHOUT,
+    //@ts-ignore
     req.query.status,
     req.params.userId,
   );

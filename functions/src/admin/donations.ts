@@ -8,6 +8,7 @@ import { TxType } from '../tx/types';
  * @param res Express response
  */
 export const getDonations = (req: Request, res: Response) =>
+  //@ts-ignore
   getTransactionRequests(res, TxType.DONATION, req.query.status);
 
 /**
@@ -19,6 +20,7 @@ export const getUserDonations = (req: Request, res: Response) =>
   getTransactionRequests(
     res,
     TxType.DONATION,
+    //@ts-ignore
     req.query.status,
     req.params.userId,
   );

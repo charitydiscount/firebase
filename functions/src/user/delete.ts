@@ -49,7 +49,7 @@ export const deleteUserData = async (
   }
 
   // Delete user's bank accounts
-  const accountDocs = await userRef.collection('tokens').listDocuments();
+  const accountDocs = await userRef.collection('accounts').listDocuments();
   for (const doc of accountDocs) {
     await doc.delete();
   }

@@ -63,7 +63,9 @@ async function getTxHandler(
       const caseRef = db.collection('cases').doc(tx.target.id);
       return new DonationHandler(walletRef, bonusPercentage, txRef, caseRef);
     case TxDefinitions.TxType.CASHOUT:
-      return new CashoutHandler(walletRef, txRef);
+      const settings = await db.doc('meta/settings').get();
+      const cashoutEmails = settings.data()!.cashoutEmails || '';
+      return new CashoutHandler(walletRef, txRef, cashoutEmails);
     default:
       return new RejectHandler(txRef);
   }

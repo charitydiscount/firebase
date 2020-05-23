@@ -45,16 +45,16 @@ function sendEmail(user: UserRecord, code: number) {
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-      <title>Transaction Authorization</title>
+      <title>Autorizare tranzactie</title>
     </head>
     <body>
-      <p>Hello ${user.displayName},</p>
-      <p>Use the following code to authorize the transaction:</p>
+      <p>Salut ${user.displayName},</p>
+      <p>Foloseste codul urmator pentru a autoriza tranzactia:</p>
       <p><strong>${code}</strong></p>
-      <p>Thanks and happy shopping,</p>
-      <p>Your CharityDiscount team</p>
+      <p>Multumim si spor la cumparaturi in continuare,</p>
+      <p>CharityDiscount</p>
     </body>
   </html>
   `;
-  return mail.sendEmail(user.email!, 'Transaction authorization', body);
+  return mail.sendEmail(user.email!, 'Autorizare tranzactie', body);
 }

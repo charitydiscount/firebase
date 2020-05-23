@@ -168,6 +168,10 @@ export interface ReferralRequest {
   reason: string | undefined;
 }
 
+export interface MetaSettings {
+  cashoutEmails: object;
+}
+
 export interface MetaGeneral {
   bonusPercentage: number;
   userPercentage: number;

@@ -9,6 +9,7 @@ import casesController from './cases';
 import donationsController from './donations';
 import cashoutController from './cashout';
 import messagesController from './message';
+import settingsController from './settings';
 
 const app = express();
 
@@ -17,9 +18,6 @@ app.options('*', middlewares.corsMw);
 
 app.use(helmet());
 app.use(bearerToken());
-
-// Limit the admin api only to development environment until stable
-//app.use(middlewares.onlyDevEnv);
 
 app.use(middlewares.firebaseAuth);
 app.use(middlewares.adminMw);
@@ -67,5 +65,8 @@ app.put('/cashout/:txId/', cashoutController.updateWithdrawal);
 // Messages endpoints
 app.get('/messages', messagesController.getMessages);
 app.put('/messages/:meId', messagesController.updateMessage);
+
+// Settings endpoints
+app.put('/settings', settingsController.updateSettings);
 
 export default app;

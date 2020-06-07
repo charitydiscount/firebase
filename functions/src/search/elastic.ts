@@ -93,7 +93,7 @@ async function searchProducts(
 
     return body.hits;
   } catch (e) {
-    console.log(e.body);
+    console.log(e);
   }
 }
 
@@ -128,12 +128,12 @@ async function search(
 
     return body.hits;
   } catch (e) {
-    console.log(e.body);
+    console.log(e);
   }
 }
 
 const featured = () => {
-  return searchProducts(elastic.indeces.FEATURED_CATEGORY || 'iarna', {
+  return searchProducts(elastic.indeces.FEATURED_CATEGORY, {
     fields: ['title'],
   });
 };

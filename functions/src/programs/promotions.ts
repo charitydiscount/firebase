@@ -14,12 +14,9 @@ export const updatePromotions = async (db: firestore.Firestore) => {
       db
         .collection('promotions')
         .doc(programId)
-        .set(
-          {
-            ...arrayToObject(programsPromotions[programId], 'id'),
-          },
-          { merge: true },
-        ),
+        .set({
+          ...arrayToObject(programsPromotions[programId], 'id'),
+        }),
     );
   }
 

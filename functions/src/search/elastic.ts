@@ -45,12 +45,11 @@ async function searchProducts(
     query: {
       bool: {
         must: {
-          multi_match: {
+          match_phrase: {
             query,
             fields,
-            fuzziness: 0,
-            operator: 'and',
-            minimum_should_match: '100%',
+            fuzziness: 'AUTO',
+            minimum_should_match: '90%',
           },
         },
       },

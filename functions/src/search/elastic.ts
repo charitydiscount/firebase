@@ -15,7 +15,6 @@ async function searchPrograms(query: string, exact: boolean = false) {
 }
 
 interface ProductsQueryParams {
-  fields: string[];
   page?: number;
   size?: number;
   sort?: string;
@@ -30,28 +29,14 @@ interface ProductsQueryParams {
  */
 async function searchProducts(
   query: string,
-  {
-    fields = ['title'],
-    page = 0,
-    size = 50,
-    sort,
-    min,
-    max,
-  }: ProductsQueryParams,
+  { page = 0, size = 50, sort, min, max }: ProductsQueryParams,
 ) {
   const searchBody: any = {
     from: page,
     size: size,
     query: {
-      bool: {
-        must: {
-          match_phrase: {
-            query,
-            fields,
-            fuzziness: 'AUTO',
-            minimum_should_match: '90%',
-          },
-        },
+      match_phrase: {
+        title: { query, slop: 1 },
       },
     },
   };
@@ -132,9 +117,7 @@ async function search(
 }
 
 const featured = () => {
-  return searchProducts(elastic.indeces.FEATURED_CATEGORY, {
-    fields: ['title'],
-  });
+  return searchProducts(elastic.indeces.FEATURED_CATEGORY, {});
 };
 
 export default {

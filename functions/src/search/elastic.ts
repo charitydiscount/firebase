@@ -35,8 +35,12 @@ async function searchProducts(
     from: page,
     size: size,
     query: {
-      match_phrase: {
-        title: { query, slop: 1 },
+      bool: {
+        must: {
+          match_phrase: {
+            title: { query, slop: 1 },
+          },
+        },
       },
     },
   };

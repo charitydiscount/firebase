@@ -68,5 +68,7 @@ app.put('/messages/:meId', messagesController.updateMessage);
 
 // Settings endpoints
 app.put('/settings', settingsController.updateSettings);
+app.put('/importantCategories', settingsController.updateImportantCategories);
+
 
 export default app;

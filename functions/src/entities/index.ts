@@ -108,6 +108,7 @@ export interface Promotion {
   landingPageLink: string;
   source: string;
   affiliateUrl: string;
+  program: PromotionProgram;
 }
 
 export interface Reviewer {
@@ -210,4 +211,9 @@ export function userCommissionsToArray(
   }
 
   return commissions;
+}
+
+export interface PromotionProgram {
+  id: number;
+  name: string;
 }

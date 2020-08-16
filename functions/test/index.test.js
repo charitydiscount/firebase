@@ -42,28 +42,6 @@ describe('Charity Discount Functions', () => {
   });
 
   describe('updateOverallRating', () => {
-    // Test Case: Adding a new review with rating 5, besides already existing ratings 3 and 4
-    // should result in the set function being called with rating 4
-    it('should compute new overall rating (4) and save it in /meta/programs', () => {
-      const wrappedUpdateOverall = test.wrap(myFunctions.updateOverallRating);
-
-      const snap = {
-        after: {
-          data: () => {
-            return {
-              reviews: {
-                '0': { rating: 3 },
-                '1': { rating: 4 },
-                '2': { rating: 5 },
-              },
-              shopUniqueCode: 'testProgramID',
-            };
-          },
-        },
-      };
-
-      return assert.equal(wrappedUpdateOverall(snap), true);
-    });
     before(() => {
       const firestoreStub = sinon.stub(admin, 'firestore');
 
@@ -113,6 +91,28 @@ describe('Charity Discount Functions', () => {
         };
       });
       myFunctions = require('../lib/index');
+    });
+    // Test Case: Adding a new review with rating 5, besides already existing ratings 3 and 4
+    // should result in the set function being called with rating 4
+    it('should compute new overall rating (4) and save it in /meta/programs', () => {
+      const wrappedUpdateOverall = test.wrap(myFunctions.updateOverallRating);
+
+      const snap = {
+        after: {
+          data: () => {
+            return {
+              reviews: {
+                '0': { rating: 3 },
+                '1': { rating: 4 },
+                '2': { rating: 5 },
+              },
+              shopUniqueCode: 'testProgramID',
+            };
+          },
+        },
+      };
+
+      return assert.equal(wrappedUpdateOverall(snap), true);
     });
     after(() => {
       adminInitStub.restore();

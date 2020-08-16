@@ -15,7 +15,6 @@ async function searchPrograms(query: string, exact: boolean = false) {
 }
 
 interface ProductsQueryParams {
-  fields: string[];
   page?: number;
   size?: number;
   sort?: string;
@@ -30,14 +29,7 @@ interface ProductsQueryParams {
  */
 async function searchProducts(
   query: string,
-  {
-    fields = ['title'],
-    page = 0,
-    size = 50,
-    sort,
-    min,
-    max,
-  }: ProductsQueryParams,
+  { page = 0, size = 50, sort, min, max }: ProductsQueryParams,
 ) {
   const searchBody: any = {
     from: page,
@@ -45,12 +37,8 @@ async function searchProducts(
     query: {
       bool: {
         must: {
-          multi_match: {
-            query,
-            fields,
-            fuzziness: 0,
-            operator: 'and',
-            minimum_should_match: '100%',
+          match_phrase: {
+            title: { query, slop: 1 },
           },
         },
       },
@@ -93,7 +81,7 @@ async function searchProducts(
 
     return body.hits;
   } catch (e) {
-    console.log(e.body);
+    console.log(e);
   }
 }
 
@@ -128,14 +116,12 @@ async function search(
 
     return body.hits;
   } catch (e) {
-    console.log(e.body);
+    console.log(e);
   }
 }
 
 const featured = () => {
-  return searchProducts(elastic.indeces.FEATURED_CATEGORY || 'iarna', {
-    fields: ['title'],
-  });
+  return searchProducts(elastic.indeces.FEATURED_CATEGORY, {});
 };
 
 export default {

@@ -1,10 +1,11 @@
-import puppeteer = require('puppeteer');
+import puppeteer = require('puppeteer-core');
 import { config } from 'firebase-functions';
 import moment = require('moment');
 import { Commission, UserCommissions, Source } from '../entities';
 import { firestore } from 'firebase-admin';
 import { roundAmount } from '../exchange';
 import { chunk } from 'lodash';
+import chromium = require('chrome-aws-lambda');
 
 interface AltexConfig {
   site: string;
@@ -22,8 +23,12 @@ export const getAltexCommissions = async (userPercentage: number) => {
     throw Error('Altex env variables missing');
   }
   const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
     timeout: 5000,
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath,
+    headless: chromium.headless,
+    ignoreHTTPSErrors: true,
   });
   const page = await browser.newPage();
   await page.goto(altexConfig.site);

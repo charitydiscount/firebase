@@ -30,7 +30,7 @@ const indeces = {
     return elasticConfig.index_products;
   },
   get FEATURED_CATEGORY() {
-    return addEnvPrefix(elasticConfig.featured);
+    return elasticConfig.featured;
   },
   get COMMISSIONS_INDEX() {
     return addEnvPrefix('tx-in-commissions');

@@ -1,4 +1,5 @@
 import elastic, { getElasticClient } from '../elastic';
+import _ = require('lodash');
 
 /**
  * Search the programs index based on the provied query (simple search term)
@@ -20,6 +21,7 @@ interface ProductsQueryParams {
   sort?: string;
   min?: string;
   max?: string;
+  field?: string;
 }
 
 /**
@@ -29,7 +31,7 @@ interface ProductsQueryParams {
  */
 async function searchProducts(
   query: string,
-  { page = 0, size = 50, sort, min, max }: ProductsQueryParams,
+  { page = 0, size = 50, sort, min, max, field = 'title' }: ProductsQueryParams,
 ) {
   const searchBody: any = {
     from: page,
@@ -38,7 +40,7 @@ async function searchProducts(
       bool: {
         must: {
           match_phrase: {
-            title: { query, slop: 1 },
+            [field]: { query, slop: 1 },
           },
         },
       },
@@ -120,8 +122,44 @@ async function search(
   }
 }
 
-const featured = () => {
-  return searchProducts(elastic.indeces.FEATURED_CATEGORY, {});
+const featured = async () => {
+  const categories = [
+    'rochii',
+    'telefone',
+    'carte',
+    'pantofi',
+    'ochelari',
+    'animale',
+  ];
+  try {
+    const { body } = await getElasticClient().msearch({
+      body: _.flatten([
+        ...categories.map((category) => [
+          { index: elastic.indeces.PRODUCTS_INDEX },
+          {
+            size: 20,
+            query: {
+              function_score: {
+                query: { match: { category } },
+                random_score: {},
+              },
+            },
+          },
+        ]),
+      ]),
+    });
+
+    return {
+      hits: _.flatMap(body.responses.map((r: any) => r.hits.hits)),
+    };
+  } catch (e) {
+    console.log(e);
+  }
+
+  // Fallback to old strategy
+  return searchProducts(elastic.indeces.FEATURED_CATEGORY, {
+    field: 'category',
+  });
 };
 
 export default {

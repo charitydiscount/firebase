@@ -35,6 +35,10 @@ export const getAffiliateProgram = async (req: Request, res: Response) => {
 export async function updatePrograms(db: firestore.Firestore) {
   try {
     const newPrograms = await getPrograms();
+    if (!newPrograms || newPrograms.length === 0) {
+      console.log('No new programs');
+      return;
+    }
     const currentPrograms = await getCurrentPrograms(db);
     const programs = await getProgramsIncludingRemoved(
       db,
@@ -59,10 +63,7 @@ export async function updatePrograms(db: firestore.Firestore) {
 const getCurrentPrograms = async (
   db: firestore.Firestore,
 ): Promise<{ [uniqueCode: string]: entity.Program }> => {
-  const currentSnap = await db
-    .collection('programs')
-    .doc('all')
-    .get();
+  const currentSnap = await db.collection('programs').doc('all').get();
   if (!currentSnap.exists) {
     return {};
   }
@@ -75,10 +76,7 @@ async function getProgramsIncludingRemoved(
   programs: entity.Program[],
   currentPrograms: { [uniqueCode: string]: entity.Program },
 ): Promise<entity.Program[]> {
-  const currentSnap = await db
-    .collection('programs')
-    .doc('all')
-    .get();
+  const currentSnap = await db.collection('programs').doc('all').get();
   if (!currentSnap.exists) {
     return programs;
   }
@@ -136,16 +134,13 @@ async function updateProgramsMeta(
   const uniqueCategories = [...new Set(categories)];
   uniqueCategories.sort((c1, c2) => c1.localeCompare(c2));
 
-  return db
-    .collection('meta')
-    .doc('programs')
-    .set(
-      {
-        count: programs.length,
-        categories: uniqueCategories,
-      },
-      { merge: true },
-    );
+  return db.collection('meta').doc('programs').set(
+    {
+      count: programs.length,
+      categories: uniqueCategories,
+    },
+    { merge: true },
+  );
 }
 
 function getProgramStatus(program?: entity.Program) {

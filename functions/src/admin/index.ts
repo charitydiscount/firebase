@@ -10,6 +10,7 @@ import donationsController from './donations';
 import cashoutController from './cashout';
 import messagesController from './message';
 import settingsController from './settings';
+import notificationsController from './notifications';
 
 const app = express();
 
@@ -70,5 +71,10 @@ app.put('/messages/:meId', messagesController.updateMessage);
 app.put('/settings', settingsController.updateSettings);
 app.put('/importantCategories', settingsController.updateImportantCategories);
 
+// Notifications endpoints
+app.post(
+  '/notifications/promotions',
+  notificationsController.sendPromotionNotifications,
+);
 
 export default app;

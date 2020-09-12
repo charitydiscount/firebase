@@ -217,3 +217,12 @@ export interface PromotionProgram {
   id: number;
   name: string;
 }
+
+export interface NotificationsDocument {
+  [userId: string]: string[];
+}
+
+export enum NotificationType {
+  COMMISSION = 'COMMISSION',
+  CAMPAIGN = 'CAMPAIGN',
+}

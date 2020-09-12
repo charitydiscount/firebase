@@ -1,4 +1,5 @@
 import { firestore, instanceId, messaging } from 'firebase-admin';
+import { NotificationType } from './entities';
 
 export function objectMap(object: object, mapFn: Function) {
   return Object.keys(object).reduce((result: object, key) => {
@@ -84,7 +85,7 @@ let fcm: messaging.Messaging;
 export interface Notification {
   title: string;
   body: string;
-  type: string;
+  type: NotificationType;
 }
 
 /**
@@ -105,9 +106,9 @@ export const sendNotification = (
     notification: {
       title,
       body,
+      clickAction: 'FLUTTER_NOTIFICATION_CLICK',
     },
     data: {
-      click_action: 'FLUTTER_NOTIFICATION_CLICK',
       type,
     },
   };

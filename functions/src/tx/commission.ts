@@ -1,7 +1,7 @@
 import { UserTransaction, TxType } from './types';
 import { firestore } from 'firebase-admin';
 import { asyncForEach, sendNotification } from '../util';
-import { Commission, Source } from '../entities';
+import { Commission, Source, NotificationType } from '../entities';
 
 /**
  * Update the cashback of the user based on the change in commissions
@@ -77,7 +77,7 @@ export const updateWallet = async (
         {
           title,
           body,
-          type: TxType.COMMISSION,
+          type: NotificationType.COMMISSION,
         },
         userDevices,
       );
@@ -103,7 +103,7 @@ export const updateWallet = async (
           {
             title,
             body,
-            type: TxType.COMMISSION,
+            type: NotificationType.COMMISSION,
           },
           userDevices,
         );

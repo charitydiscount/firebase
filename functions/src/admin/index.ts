@@ -10,6 +10,7 @@ import donationsController from './donations';
 import cashoutController from './cashout';
 import messagesController from './message';
 import settingsController from './settings';
+import mailsController from './mails';
 
 const app = express();
 
@@ -33,16 +34,16 @@ app.put('/programs/:programUniqueCode', programsController.updateProgram);
 // User commissions endpoints
 app.get('/commissions', commissionsController.getCommissions);
 app.get(
-  '/user/:userId/commissions',
-  commissionsController.getCommissionsOfUser,
+    '/user/:userId/commissions',
+    commissionsController.getCommissionsOfUser,
 );
 app.post(
-  '/user/:userId/commissions',
-  commissionsController.createUserCommission,
+    '/user/:userId/commissions',
+    commissionsController.createUserCommission,
 );
 app.put(
-  '/user/:userId/commissions/:commissionId',
-  commissionsController.updateUserCommission,
+    '/user/:userId/commissions/:commissionId',
+    commissionsController.updateUserCommission,
 );
 
 // Charity cases endpoints
@@ -70,5 +71,7 @@ app.put('/messages/:meId', messagesController.updateMessage);
 app.put('/settings', settingsController.updateSettings);
 app.put('/importantCategories', settingsController.updateImportantCategories);
 
+// Mail notification endpoints
+app.put('/notifications/mail', mailsController.sendMailNotification);
 
 export default app;

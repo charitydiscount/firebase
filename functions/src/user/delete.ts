@@ -65,7 +65,7 @@ export const deleteUserData = async (
   const file = bucket.file(filePath);
 
   const fileExists = await file.exists();
-  if (fileExists) {
+  if (fileExists[0] === true) {
     try {
       await file.delete();
     } catch (e) {

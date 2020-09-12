@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as admin from 'firebase-admin';
-import uuid = require('uuid/v4');
+import { v4 as uuid } from 'uuid';
 
 const _db = admin.firestore();
 

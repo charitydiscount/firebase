@@ -147,6 +147,11 @@ export interface CharityCase {
   funds?: number;
 }
 
+export interface User {
+  email: string ,
+  disableMailNotification: boolean
+}
+
 export interface UserAccount {
   iban: string;
   name: string;

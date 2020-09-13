@@ -26,7 +26,7 @@ const sendMailNotification = async (req: Request, res: Response) => {
   let counter = 0;
   querySnapshot.forEach((doc) => {
     const user = doc.data() as User;
-    if (user.disableMailNotification) {
+    if (!user.disableMailNotification) {
       counter++;
       sendEmail(user.email, req.body.subject, req.body.content)
         .then()

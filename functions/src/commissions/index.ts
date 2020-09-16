@@ -253,7 +253,7 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
   // Prepare the new/updated commissions in the internal format
   for (const userId in newCommissions) {
     if (!userId) {
-      console.log(`Missing userId for commissions: ${newCommissions[userId]}`);
+      console.log(`Missing userId for commissions: ${newCommissions[userId].toString()}`);
 
       // TODO Find compensation strategies
       continue;

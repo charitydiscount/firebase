@@ -252,14 +252,16 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
 
   // Prepare the new/updated commissions in the internal format
   for (const userId in newCommissions) {
-    if (!userId) {
-      console.log(`Missing userId for commissions: ${newCommissions[userId].toString()}`);
-
-      // TODO Find compensation strategies
-      continue;
-    }
     for (const commissionId in newCommissions[userId]) {
       const commissionToBeSaved = newCommissions[userId][commissionId];
+      if (!userId) {
+        console.log(
+          `Missing userId for commissions: ${commissionToBeSaved.originId}`,
+        );
+
+        // TODO Find compensation strategies
+        continue;
+      }
       if (currentCommissions[userId] === undefined) {
         currentCommissions[userId] = await getCurrentUserCommissions(
           db,
@@ -396,7 +398,36 @@ const get2PCommissions = async (
   }
 
   await asyncForEach(commissions2p, async (commission) => {
-    const userIdOfCommission = getUserFor2PCommission(commission);
+    let userIdOfCommission = getUserFor2PCommission(commission);
+
+    if (!userIdOfCommission) {
+      if (commission.publicActionData.sourceIp) {
+        // Search based on the click and IP address
+        const clicksWithSameIpSnap = await db
+          .collection('clicks')
+          .where('ipAddress', '==', commission.publicActionData.sourceIp)
+          .where('programId', '==', commission.programId)
+          .get();
+        if (clicksWithSameIpSnap.size === 1) {
+          userIdOfCommission = clicksWithSameIpSnap.docs[0].data().userId;
+        } else if (clicksWithSameIpSnap.size > 1) {
+          console.log(`Multiple clicks found for commission ${commission.id}`);
+        }
+      }
+
+      if (!userIdOfCommission) {
+        // Failed to find the userId
+        // Save the commission to the DLQ and hope someone contacts us :D
+        // In case someone does, we should add the click entry for now
+        // and let the system handle the commission updates
+        await db
+          .collection('incomplete-commissions')
+          .doc(commission.id.toString())
+          .set(commission, { merge: true });
+        return;
+      }
+    }
+
     const commissionToBeSaved = await toCommissionEntity(
       commission,
       userPercent,

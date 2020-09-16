@@ -147,7 +147,7 @@ export const toCommissionEntity = async (
 
 export const getUserFor2PCommission = (commission: Commission) => {
   if (!commission.statsTags || commission.statsTags.length === 0) {
-    return '';
+    return null;
   }
 
   return commission.statsTags.slice(1, commission.statsTags.length - 1);

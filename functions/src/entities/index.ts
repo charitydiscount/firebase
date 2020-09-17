@@ -15,6 +15,7 @@ export interface Commission {
   program: CommissionProgram;
   referralId?: string;
   source: string;
+  ipAddress?: string;
 }
 
 export interface CommissionProgram {
@@ -148,8 +149,8 @@ export interface CharityCase {
 }
 
 export interface User {
-  email: string ,
-  disableMailNotification: boolean
+  email: string;
+  disableMailNotification: boolean;
 }
 
 export interface UserAccount {
@@ -221,4 +222,12 @@ export function userCommissionsToArray(
 export interface PromotionProgram {
   id: number;
   name: string;
+}
+
+export interface Click {
+  ipAddress: string;
+  userId: string;
+  programId: number;
+  createdAt: firestore.Timestamp;
+  deviceType?: string;
 }

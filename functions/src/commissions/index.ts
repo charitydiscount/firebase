@@ -406,7 +406,7 @@ const get2PCommissions = async (
         const clicksWithSameIpSnap = await db
           .collection('clicks')
           .where('ipAddress', '==', commission.publicActionData.sourceIp)
-          .where('programId', '==', commission.programId)
+          .where('programId', '==', commission.programId.toString())
           .get();
         if (clicksWithSameIpSnap.size === 1) {
           userIdOfCommission = clicksWithSameIpSnap.docs[0].data().userId;

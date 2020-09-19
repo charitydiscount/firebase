@@ -226,8 +226,9 @@ export interface PromotionProgram {
 
 export interface Click {
   ipAddress: string;
+  ipv6Address: string;
   userId: string;
-  programId: number;
+  programId: string;
   createdAt: firestore.Timestamp;
   deviceType?: string;
 }

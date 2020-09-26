@@ -11,6 +11,7 @@ import cashoutController from './cashout';
 import messagesController from './message';
 import settingsController from './settings';
 import mailsController from './mails';
+import clicksController from './clicks';
 
 const app = express();
 
@@ -73,5 +74,10 @@ app.put('/importantCategories', settingsController.updateImportantCategories);
 
 // Mail notification endpoints
 app.put('/notifications/mail', mailsController.sendMailNotification);
+
+//Clicks endpoints
+app.get('/clicks', clicksController.getClicks);
+app.post('/clicks', clicksController.createClick);
+app.put('/clicks/:clickId', clicksController.updateClick);
 
 export default app;

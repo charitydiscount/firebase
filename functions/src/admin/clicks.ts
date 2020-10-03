@@ -5,6 +5,9 @@ import * as entity from "../entities";
 
 const _db = admin.firestore();
 
+const beginningDate = Date.now() - 86400000; //last 24 hours
+const beginningDateObject = new Date(beginningDate);
+
 /**
  * Retrieve all stored clicks
  *
@@ -14,6 +17,7 @@ const _db = admin.firestore();
 export const getClicks = (req: Request, res: Response) =>
     _db
         .collection('clicks')
+        .where('createdAt', '>', beginningDateObject)
         .get()
         .then((querySnap) =>
             res.json(

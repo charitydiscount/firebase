@@ -149,6 +149,7 @@ export interface CharityCase {
 }
 
 export interface User {
+  userId: string;
   email: string;
   disableMailNotification: boolean;
 }

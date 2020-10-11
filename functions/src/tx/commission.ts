@@ -2,6 +2,7 @@ import { UserTransaction, TxType } from './types';
 import { firestore } from 'firebase-admin';
 import { asyncForEach, sendNotification } from '../util';
 import { Commission, Source } from '../entities';
+import { createWallet } from '../user';
 
 /**
  * Update the cashback of the user based on the change in commissions
@@ -39,8 +40,8 @@ export const updateWallet = async (
   const userWalletRef = db.collection('points').doc(userId);
   const userWallet = await userWalletRef.get();
   if (!userWallet.exists) {
-    console.log(`Wallet of user ${userId} doesn't exist. Probably new user`);
-    return;
+    console.log(`Wallet of user ${userId} doesn't exist. Initializing it`);
+    await createWallet(db, userId);
   }
 
   const newPendingCommissions = newCommissions.filter(

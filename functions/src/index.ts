@@ -40,7 +40,7 @@ export const handleNewUser = functions
   .region('europe-west1')
   .auth.user()
   .onCreate((user: functions.auth.UserRecord) =>
-    Promise.all([createUser(db, user), createWallet(db, user)]).catch((e) =>
+    Promise.all([createUser(db, user), createWallet(db, user.uid)]).catch((e) =>
       console.log(e.message),
     ),
   );

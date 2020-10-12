@@ -29,10 +29,10 @@ const sendMailNotification = async (req: Request, res: Response) => {
     if (!user.disableMailNotification) {
       counter++;
       sendEmail(user.email, req.body.subject, req.body.content.replace("/unsubscribe", "/unsubscribe/" + user.userId))
-            .then()
-            .catch((error) => {
-                console.log(error);
-            });
+          .then()
+          .catch((error) => {
+            console.log(error);
+          });
     }
   });
 

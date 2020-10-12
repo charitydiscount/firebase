@@ -295,6 +295,10 @@ export async function updateCommissions(db: admin.firestore.Firestore) {
     const referredCommissions = usersCommissions[userId];
     const referral = referrals.docs[0].data() as entity.Referral;
     for (const commissionid in referredCommissions) {
+      if (referredCommissions[commissionid].source === entity.Source.REFERRAL) {
+        // Source commission is a referral bonus
+        continue;
+      }
       // Create the resulting referral commission
       const referralCommission = generateReferralCommission(
         referredCommissions[commissionid],

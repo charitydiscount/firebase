@@ -12,10 +12,10 @@ export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
     userId: user.uid,
   });
 
-export const createWallet = (db: firestore.Firestore, user: auth.UserRecord) =>
+export const createWallet = (db: firestore.Firestore, userId: string) =>
   db
     .collection('points')
-    .doc(user.uid)
+    .doc(userId)
     .create({
       cashback: {
         approved: 0.0,

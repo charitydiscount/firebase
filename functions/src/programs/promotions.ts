@@ -24,5 +24,7 @@ export const updatePromotions = async (db: firestore.Firestore) => {
     );
   }
 
+  promises.push(db.collection('promotions').doc('all').set(programsPromotions));
+
   return Promise.all(promises);
 };

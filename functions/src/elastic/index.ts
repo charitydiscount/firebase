@@ -157,11 +157,21 @@ export async function saveUser(user: auth.UserRecord) {
   }
 }
 
+export async function deleteUser(user: auth.UserRecord) {
+  try {
+    await getElasticClient().delete({
+      index: indeces.USERS_INDEX,
+      id: user.uid,
+    });
+  } catch (error) {
+    console.log(error.message || error);
+  }
+}
+
 export default {
   indeces,
   sendBulkRequest,
   buildBulkBodyForTx,
   buildBulkBodyForPrograms,
   buildBulkBodyForCommissions,
-  saveUser,
 };

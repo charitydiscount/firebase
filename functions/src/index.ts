@@ -32,6 +32,7 @@ import { updatePrograms as refreshPrograms } from './programs/program';
 import { updatePromotions as updateProms } from './programs/promotions';
 import adminApp from './admin';
 import { Commission } from './entities';
+import { saveUser as saveUserToElastic } from './elastic';
 
 /**
  * Create the user wallet document when a new user registers
@@ -40,9 +41,11 @@ export const handleNewUser = functions
   .region('europe-west1')
   .auth.user()
   .onCreate((user: functions.auth.UserRecord) =>
-    Promise.all([createUser(db, user), createWallet(db, user.uid)]).catch((e) =>
-      console.log(e.message),
-    ),
+    Promise.all([
+      createUser(db, user),
+      createWallet(db, user.uid),
+      saveUserToElastic(user),
+    ]).catch((e) => console.log(e.message)),
   );
 
 /**

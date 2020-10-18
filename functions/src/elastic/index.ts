@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import { config } from 'firebase-functions';
+import { config, auth } from 'firebase-functions';
 import { UserTransaction, TxType } from '../tx/types';
 import { Program, Commission } from '../entities';
 import { flatMap, isDev } from '../util';
@@ -43,6 +43,9 @@ const indeces = {
   },
   get BONUS_INDEX() {
     return addEnvPrefix('tx-bonus');
+  },
+  get USERS_INDEX() {
+    return addEnvPrefix('users');
   },
 };
 
@@ -111,8 +114,13 @@ export function buildBulkBodyForPrograms(programs: Program[]) {
 export function buildBulkBodyForCommissions(commissions: Commission[]) {
   return flatMap(
     (commission: Commission) => [
-      { index: { _index: indeces.COMMISSIONS_INDEX, _id: commission.originId } },
-      commission,
+      {
+        index: { _index: indeces.COMMISSIONS_INDEX, _id: commission.originId },
+      },
+      {
+        ...commission,
+        elasticDate: commission.createdAt.toDate().toDateString(),
+      },
     ],
     commissions,
   );
@@ -133,10 +141,27 @@ function getIndexForTx(transaction: UserTransaction) {
   }
 }
 
+export async function saveUser(user: auth.UserRecord) {
+  try {
+    await getElasticClient().create({
+      index: indeces.USERS_INDEX,
+      id: user.uid,
+      body: {
+        uid: user.uid,
+        providerData: user.providerData,
+        ...user.metadata,
+      },
+    });
+  } catch (error) {
+    console.log(error.message || error);
+  }
+}
+
 export default {
   indeces,
   sendBulkRequest,
   buildBulkBodyForTx,
   buildBulkBodyForPrograms,
   buildBulkBodyForCommissions,
+  saveUser,
 };

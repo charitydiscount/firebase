@@ -3,6 +3,7 @@ import { UserRecord } from 'firebase-functions/lib/providers/auth';
 import { isDev } from '../util';
 import { sendEmail } from '../email';
 import { deleteAccountMailBody } from '../email/content';
+import { deleteUser as deleteUserFromElastic } from '../elastic';
 
 /**
  * - send email
@@ -12,8 +13,8 @@ import { deleteAccountMailBody } from '../email/content';
  * - delete info from storage
  */
 export const deleteUserData = async (
-    db: firestore.Firestore,
-    user: UserRecord,
+  db: firestore.Firestore,
+  user: UserRecord,
 ) => {
   if (user.email) {
     await sendEmail(user.email, 'Cerere ștergere cont', deleteAccountMailBody);
@@ -23,18 +24,18 @@ export const deleteUserData = async (
 
   // Delete referrals of the user (he/she invited others)
   const referredUsers = await db
-      .collection('referrals')
-      .where('ownerId', '==', user.uid)
-      .get();
+    .collection('referrals')
+    .where('ownerId', '==', user.uid)
+    .get();
   for (const doc of referredUsers.docs) {
     await doc.ref.delete();
   }
 
   // Anonymize invitation of the user (he/she was invited)
   const ownReferrals = await db
-      .collection('referrals')
-      .where('userId', '==', user.uid)
-      .get();
+    .collection('referrals')
+    .where('userId', '==', user.uid)
+    .get();
   for (const doc of ownReferrals.docs) {
     await doc.ref.update({
       name: '-',
@@ -44,9 +45,9 @@ export const deleteUserData = async (
 
   // Anonymize user's reviews
   const shopReviews = await db
-      .collection('reviews')
-      .where(`reviews.${user.uid}`, '>', '')
-      .get();
+    .collection('reviews')
+    .where(`reviews.${user.uid}`, '>', '')
+    .get();
   for (const doc of shopReviews.docs) {
     await doc.ref.update({
       [`reviews.${user.uid}.reviewer.name`]: '-',
@@ -73,7 +74,7 @@ export const deleteUserData = async (
   // Delete user profile picture
   const filePath = `profilePhotos/${user.uid}/profilePicture.png`;
   const bucket = storage().bucket(
-      isDev ? 'charitydiscount-test.appspot.com' : 'charitydiscount.appspot.com',
+    isDev ? 'charitydiscount-test.appspot.com' : 'charitydiscount.appspot.com',
   );
   const file = bucket.file(filePath);
 
@@ -86,8 +87,10 @@ export const deleteUserData = async (
     }
   }
 
+  await deleteUserFromElastic(user);
+
   return true;
 };
 
 const deleteDoc = async (doc: firestore.DocumentReference) =>
-    doc.delete().catch();
+  doc.delete().catch();

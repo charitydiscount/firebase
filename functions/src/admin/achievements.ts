@@ -4,6 +4,18 @@ import * as admin from "firebase-admin";
 
 const _db = admin.firestore();
 
+export const getAchievements = (req: Request, res: Response) =>
+    _db
+        .collection('achievements')
+        .get()
+        .then((querySnap) =>
+            res.json(
+                querySnap.docs.map((docSnap) => {
+                    return { ...docSnap.data(), id: docSnap.id };
+                }),
+            ),
+        );
+
 export const createNewAchievement = async (req: Request, res: Response) => {
     const validationResult = validateNewCommission(req.body);
     if (!validationResult.isValid) {
@@ -62,5 +74,6 @@ const validateNewCommission = (data: any): CheckResult => {
 };
 
 export default {
-    createNewAchievement
+    createNewAchievement,
+    getAchievements
 };

@@ -83,5 +83,6 @@ app.put('/clicks/:clickId', clicksController.updateClick);
 
 //Achievements endpoints
 app.post('/achievements', achievementsController.createNewAchievement);
+app.get('/achievements', achievementsController.getAchievements);
 
 export default app;

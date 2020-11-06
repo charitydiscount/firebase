@@ -25,7 +25,7 @@ import {
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import searchApp from './search';
-import commissionsUtil, { updateCommissions } from './commissions';
+import { updateCommissions } from './commissions';
 import programsApp from './programs';
 import authApp from './auth';
 import { updatePrograms as refreshPrograms } from './programs/program';
@@ -180,14 +180,6 @@ const getUserCommissions = (commissions: {
   const { userId, ...commissionsMap } = commissions;
   return Object.values(commissionsMap);
 };
-
-export const updateCommissionsFromStorage = functions
-  .region('europe-west1')
-  .storage.bucket(commissionsUtil.bucket.name)
-  .object()
-  .onFinalize((object) =>
-    commissionsUtil.updateCommissionFromBucket(db, object),
-  );
 
 export const search = functions
   .region('europe-west1')

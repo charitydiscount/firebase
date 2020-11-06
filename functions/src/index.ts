@@ -250,8 +250,9 @@ export const handleClick = functions
 /**
  * Handle all achievement related messages
  */
-export const handleAchievementMessage = functions.pubsub
-  .topic('achievements')
+export const handleAchievementMessage = functions
+  .region('europe-west1')
+  .pubsub.topic('achievements')
   .onPublish((message) => {
     console.log(message.json);
   });

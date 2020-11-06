@@ -255,5 +255,8 @@ export const handleAchievementMessage = functions
   .region('europe-west1')
   .pubsub.topic('achievements')
   .onPublish((message) => {
-    console.log(message.json);
+    console.log(
+      `Received achievement message for ${message.attributes['type']}`,
+    );
+    return true;
   });

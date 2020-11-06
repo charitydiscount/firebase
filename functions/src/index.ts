@@ -15,7 +15,7 @@ const db = admin.firestore();
 
 import { processTx } from './tx';
 import { TxStatus } from './tx/types';
-import { updateProgramRating } from './rating';
+import { handleProgramReview } from './rating';
 import {
   createWallet,
   createUser,
@@ -45,7 +45,7 @@ export const handleNewUser = functions
       createUser(db, user),
       createWallet(db, user.uid),
       saveUserToElastic(user),
-    ]).catch((e) => console.log(e.message)),
+    ]).catch((e) => console.error(e.message)),
   );
 
 /**
@@ -92,9 +92,9 @@ export const processTransaction = functions
 export const updateOverallRating = functions
   .region('europe-west1')
   .firestore.document('reviews/{programId}')
-  .onWrite((snap, context) => {
+  .onWrite((snap) => {
     //@ts-ignore
-    return updateProgramRating(db, snap.after.data());
+    return handleProgramReview(db, snap.before.data(), snap.after.data());
   });
 
 /**
@@ -103,7 +103,7 @@ export const updateOverallRating = functions
 export const generateOtp = functions
   .region('europe-west1')
   .firestore.document('otp-requests/{userId}')
-  .onWrite(async (snap, context) => {
+  .onWrite(async (snap) => {
     const userId = snap.after.id;
     let userRecord;
     try {
@@ -134,7 +134,7 @@ export const generateOtp = functions
 export const updateUserWallet = functions
   .region('europe-west1')
   .firestore.document('commissions/{userId}')
-  .onWrite((snap, context) => {
+  .onWrite((snap) => {
     if (!snap.after.exists) {
       return;
     }
@@ -229,7 +229,7 @@ export const manage = functions
 export const handleReferralRequest = functions
   .region('europe-west1')
   .firestore.document('referral-requests/{requestId}')
-  .onCreate(async (snap, context) => handleReferral(db, snap));
+  .onCreate((snap) => handleReferral(db, snap));
 
 /**
  * Remove all PII of the deleted user and donate any available cashback left
@@ -237,4 +237,21 @@ export const handleReferralRequest = functions
 export const onUserDelete = functions
   .region('europe-west1')
   .auth.user()
-  .onDelete(async (user) => handleUserDelete(db, user));
+  .onDelete((user) => handleUserDelete(db, user));
+
+/**
+ * Handle shop clicks
+ */
+export const handleClick = functions
+  .region('europe-west1')
+  .firestore.document('clicks/{clickId}')
+  .onCreate((snap) => handleClick(snap.data()));
+
+/**
+ * Handle all achievement related messages
+ */
+export const handleAchievementMessage = functions.pubsub
+  .topic('achievements')
+  .onPublish((message) => {
+    console.log(message.json);
+  });

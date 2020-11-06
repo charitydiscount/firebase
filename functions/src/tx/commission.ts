@@ -3,6 +3,8 @@ import { firestore } from 'firebase-admin';
 import { asyncForEach, sendNotification } from '../util';
 import { Commission, Source } from '../entities';
 import { createWallet } from '../user';
+import { publishMessage } from '../achievements/pubsub';
+import { AchievementType } from '../achievements/types';
 
 /**
  * Update the cashback of the user based on the change in commissions
@@ -95,6 +97,12 @@ export const updateWallet = async (
         userDevices,
       );
     }
+
+    await publishMessage(
+      AchievementType.COMMISSION_PENDING,
+      commission,
+      userId,
+    );
   });
 
   await asyncForEach(
@@ -121,6 +129,8 @@ export const updateWallet = async (
           userDevices,
         );
       }
+
+      await publishMessage(AchievementType.COMMISSION_PAID, commission, userId);
     },
   );
 

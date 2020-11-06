@@ -1,6 +1,8 @@
 import * as TxDefinitions from './types';
 import { firestore } from 'firebase-admin';
 import elastic from '../elastic';
+import { publishMessage } from '../achievements/pubsub';
+import { AchievementType } from '../achievements/types';
 
 export default class DonationHandler implements TxDefinitions.TxHandler {
   private bonusPercentage: number;
@@ -70,6 +72,8 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
         elastic.buildBulkBodyForTx([userTxDonation, userTxBonus]),
       )
       .catch((e) => console.log(e));
+
+    await publishMessage(AchievementType.DONATION, tx, tx.userId);
 
     return { status: TxDefinitions.TxStatus.ACCEPTED };
   }

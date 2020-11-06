@@ -40,23 +40,26 @@ export const updateWallet = async (
     .reduce((a1, a2) => a1 + a2, 0);
 
   const userWalletRef = db.collection('points').doc(userId);
-  const userWallet = await userWalletRef.get();
+  let userWallet = await userWalletRef.get();
   if (!userWallet.exists) {
     console.log(`Wallet of user ${userId} doesn't exist. Initializing it`);
     await createWallet(db, userId);
+    userWallet = await userWalletRef.get();
   }
 
   // Filter out commissions that are already stored in the transactions array
   const currentUserTransactions = (userWallet.data() as UserWallet)
-    .transactions;
-  unprocessedAcceptedCommissions = unprocessedAcceptedCommissions.filter(
-    (c) =>
-      currentUserTransactions.find(
-        (tx) =>
-          tx.type === TxType.COMMISSION &&
-          tx.sourceTxId === c.originId.toString(),
-      ) !== undefined,
-  );
+    ?.transactions;
+  if (currentUserTransactions) {
+    unprocessedAcceptedCommissions = unprocessedAcceptedCommissions.filter(
+      (c) =>
+        currentUserTransactions.find(
+          (tx) =>
+            tx.type === TxType.COMMISSION &&
+            tx.sourceTxId === c.originId.toString(),
+        ) !== undefined,
+    );
+  }
 
   const newPendingCommissions = newCommissions.filter(
     (commission) =>

@@ -1,4 +1,4 @@
-import { UserTransaction, TxType } from './types';
+import { UserTransaction, TxType, UserWallet } from './types';
 import { firestore } from 'firebase-admin';
 import { asyncForEach, sendNotification } from '../util';
 import { Commission, Source } from '../entities';
@@ -19,7 +19,7 @@ export const updateWallet = async (
 ) => {
   const acceptedStatuses = ['paid'];
   const pendingStatuses = ['pending', 'accepted'];
-  const unprocessedAcceptedCommissions = newCommissions.filter(
+  let unprocessedAcceptedCommissions = newCommissions.filter(
     (commission) =>
       acceptedStatuses.includes(commission.status) &&
       (previousCommissions.find(
@@ -43,6 +43,18 @@ export const updateWallet = async (
     console.log(`Wallet of user ${userId} doesn't exist. Initializing it`);
     await createWallet(db, userId);
   }
+
+  // Filter out commissions that are already stored in the transactions array
+  const currentUserTransactions = (userWallet.data() as UserWallet)
+    .transactions;
+  unprocessedAcceptedCommissions = unprocessedAcceptedCommissions.filter(
+    (c) =>
+      currentUserTransactions.find(
+        (tx) =>
+          tx.type === TxType.COMMISSION &&
+          tx.sourceTxId === c.originId.toString(),
+      ) !== undefined,
+  );
 
   const newPendingCommissions = newCommissions.filter(
     (commission) =>
@@ -72,7 +84,7 @@ export const updateWallet = async (
           : 'Cumpărătură înregistrată!🛒';
       const body =
         commission.source === Source.REFERRAL
-          ? 'Invitatul tău tocmai a cumpărat prin CharitDiscount, adică un nou bonus pentru tine'
+          ? 'Invitatul tău tocmai a cumpărat prin CharityDiscount, adică un nou bonus pentru tine'
           : `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`;
       await sendNotification(
         {

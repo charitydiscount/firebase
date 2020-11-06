@@ -31,8 +31,9 @@ import authApp from './auth';
 import { updatePrograms as refreshPrograms } from './programs/program';
 import { updatePromotions as updateProms } from './programs/promotions';
 import adminApp from './admin';
-import { Commission } from './entities';
+import { Click, Commission } from './entities';
 import { saveUser as saveUserToElastic } from './elastic';
+import { handleClick } from './clicks';
 
 /**
  * Create the user wallet document when a new user registers
@@ -242,10 +243,10 @@ export const onUserDelete = functions
 /**
  * Handle shop clicks
  */
-export const handleClick = functions
+export const onClick = functions
   .region('europe-west1')
   .firestore.document('clicks/{clickId}')
-  .onCreate((snap) => handleClick(snap.data()));
+  .onCreate((snap) => handleClick(snap.data() as Click));
 
 /**
  * Handle all achievement related messages

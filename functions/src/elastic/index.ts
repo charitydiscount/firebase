@@ -27,7 +27,7 @@ const indeces = {
     return addEnvPrefix(elasticConfig.index_programs);
   },
   get PRODUCTS_INDEX() {
-    return elasticConfig.index_products;
+    return isDev ? 'test-products-2020.11.07' : elasticConfig.index_products;
   },
   get FEATURED_CATEGORY() {
     return elasticConfig.featured;

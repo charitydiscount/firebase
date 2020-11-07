@@ -17,7 +17,7 @@ export const getAchievements = (req: Request, res: Response) =>
         );
 
 export const createNewAchievement = async (req: Request, res: Response) => {
-    const validationResult = validateNewCommission(req.body);
+    const validationResult = validateCommission(req.body);
     if (!validationResult.isValid) {
         return res.status(422).json(validationResult.violations);
     }
@@ -28,7 +28,25 @@ export const createNewAchievement = async (req: Request, res: Response) => {
     }).then((writeResult) => res.json(writeResult.id));
 };
 
-const validateNewCommission = (data: any): CheckResult => {
+export const updateAchievement = async (req: Request, res: Response) => {
+    const validationResult = validateCommission(req.body);
+    if (!validationResult.isValid) {
+        return res.status(422).json(validationResult.violations);
+    }
+
+    const saveResult = await _db
+        .collection('achievements')
+        .doc(req.params.achievementId)
+        .set(
+            {
+                ...req.body,
+            },
+            { merge: true },
+        );
+    return res.json(saveResult.writeTime);
+};
+
+const validateCommission = (data: any): CheckResult => {
     const baseFieldsResult = checkObjectWithProperties(data, [
         {key: 'name', type: 'object'},
         {key: 'description', type: 'object'},
@@ -75,5 +93,6 @@ const validateNewCommission = (data: any): CheckResult => {
 
 export default {
     createNewAchievement,
+    updateAchievement,
     getAchievements
 };

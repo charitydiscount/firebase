@@ -8,3 +8,13 @@ export enum AchievementType {
   INVITE = 'invite',
   FAVORITE = 'favorite',
 }
+
+export enum AchievementConditionType {
+  COUNT = 'count',
+  EXACT_DATE = 'exactDate',
+  UNTIL_DATE = 'untilDate',
+}
+
+export enum AchievementConditionUnit {
+  SHOP = 'shop',
+}

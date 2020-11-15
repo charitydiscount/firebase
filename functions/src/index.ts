@@ -34,6 +34,7 @@ import adminApp from './admin';
 import { Click, Commission } from './entities';
 import { saveUser as saveUserToElastic } from './elastic';
 import { handleClick } from './clicks';
+import { handleAchievementMessage } from './achievements/handler';
 
 /**
  * Create the user wallet document when a new user registers
@@ -251,12 +252,12 @@ export const onClick = functions
 /**
  * Handle all achievement related messages
  */
-export const handleAchievementMessage = functions
+export const onAchievementMessage = functions
   .region('europe-west1')
   .pubsub.topic('achievements')
   .onPublish((message) => {
     console.log(
       `Received achievement message for ${message.attributes['type']}`,
     );
-    return true;
+    return handleAchievementMessage(message, db);
   });

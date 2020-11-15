@@ -23,7 +23,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "express-bearer-token": "^2.4.0",
-    "firebase-admin": "^9.3.0",
+    "firebase-admin": "^9.4.1",
     "firebase-functions": "^3.11.0",
     "helmet": "^4.2.0",
     "iltorb": "^2.4.5",

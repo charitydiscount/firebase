@@ -15,7 +15,7 @@ export const publishMessage = async (
   try {
     await pubsub.topic('achievements').publishMessage({
       attributes: { type, userId },
-      json: { data },
+      json: data,
     });
   } catch (error) {
     console.error(`Couldn't publish message: ${error.message || error}`);

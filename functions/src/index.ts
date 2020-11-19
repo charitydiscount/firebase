@@ -35,6 +35,8 @@ import { Click, Commission } from './entities';
 import { saveUser as saveUserToElastic } from './elastic';
 import { handleClick } from './clicks';
 import { handleAchievementMessage } from './achievements/handler';
+import { FirestoreCollections } from './collections';
+import { handleRewardRequest } from './achievements/rewards';
 
 /**
  * Create the user wallet document when a new user registers
@@ -255,9 +257,9 @@ export const onClick = functions
 export const onAchievementMessage = functions
   .region('europe-west1')
   .pubsub.topic('achievements')
-  .onPublish((message) => {
-    console.log(
-      `Received achievement message for ${message.attributes['type']}`,
-    );
-    return handleAchievementMessage(message, db);
-  });
+  .onPublish((message) => handleAchievementMessage(message, db));
+
+export const onRewardRequest = functions
+  .region('europe-west1')
+  .firestore.document(`${FirestoreCollections.REWARD_REQUESTS}/{requestId}`)
+  .onCreate((snap) => handleRewardRequest(db, snap));

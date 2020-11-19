@@ -233,3 +233,8 @@ export interface Click {
   createdAt: firestore.Timestamp;
   deviceType?: string;
 }
+
+export interface LocalizedText {
+  en: string;
+  ro: string;
+}

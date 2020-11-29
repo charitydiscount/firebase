@@ -20,6 +20,9 @@ const HANDLED_ACHIEVEMENTS = [
   AchievementType.CLICK,
   AchievementType.COMMISSION_PENDING,
   AchievementType.COMMISSION_PAID,
+  AchievementType.DONATION,
+  AchievementType.CASHOUT,
+  AchievementType.INVITE,
 ];
 
 export const handleAchievementMessage = async (
@@ -28,6 +31,7 @@ export const handleAchievementMessage = async (
 ) => {
   const type = message.attributes['type'] as AchievementType;
   if (!HANDLED_ACHIEVEMENTS.find((a) => a === type)) {
+    console.log(`Unhandled achievement type ${type}`);
     return;
   }
 

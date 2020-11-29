@@ -4,10 +4,7 @@ import { Currencies } from '../entities/currencies';
 import { NotificationTypes, sendNotification } from '../notifications/fcm';
 import { getUserDeviceTokens } from '../notifications/tokens';
 import { TxStatus } from '../tx/types';
-import {
-  AchievementReward,
-  AchievementRewardRequest,
-} from './achievement.model';
+import { Achievement, AchievementRewardRequest } from './achievement.model';
 
 export const handleRewardRequest = async (
   db: firestore.Firestore,
@@ -15,15 +12,13 @@ export const handleRewardRequest = async (
 ) => {
   const request = requestSnap.data() as AchievementRewardRequest;
 
-  const rewardSnap = await db
-    .collection(FirestoreCollections.REWARD_REQUESTS)
+  const achievementSnap = await db
+    .collection(FirestoreCollections.ACHIEVEMENTS)
     .doc(request.achievement.id)
     .get();
 
-  if (!rewardSnap.exists) {
-    console.error(
-      `Reward not defined for achievement ${request.achievement.id}`,
-    );
+  if (!achievementSnap.exists) {
+    console.error(`Could not find achievement ${request.achievement.id}`);
     await requestSnap.ref.set(
       {
         status: TxStatus.ERROR,
@@ -33,7 +28,7 @@ export const handleRewardRequest = async (
     );
     return;
   }
-  const reward = rewardSnap.data() as AchievementReward;
+  const reward = (achievementSnap.data() as Achievement).reward;
 
   await requestSnap.ref.set(
     {
@@ -57,6 +52,7 @@ export const handleRewardRequest = async (
     default:
       break;
   }
+
   // Send notification
   const userDevices = await getUserDeviceTokens(db, request.userId);
   if (userDevices && userDevices.length > 0) {

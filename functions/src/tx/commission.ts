@@ -1,8 +1,12 @@
-import { UserTransaction, TxType } from './types';
+import { UserTransaction, TxType, UserWallet } from './types';
 import { firestore } from 'firebase-admin';
-import { asyncForEach, sendNotification } from '../util';
+import { asyncForEach } from '../util';
 import { Commission, Source } from '../entities';
 import { createWallet } from '../user';
+import { publishMessage } from '../achievements/pubsub';
+import { AchievementType } from '../achievements/types';
+import { getUserDeviceTokens } from '../notifications/tokens';
+import { sendNotification } from '../notifications/fcm';
 
 /**
  * Update the cashback of the user based on the change in commissions
@@ -19,7 +23,7 @@ export const updateWallet = async (
 ) => {
   const acceptedStatuses = ['paid'];
   const pendingStatuses = ['pending', 'accepted'];
-  const unprocessedAcceptedCommissions = newCommissions.filter(
+  let unprocessedAcceptedCommissions = newCommissions.filter(
     (commission) =>
       acceptedStatuses.includes(commission.status) &&
       (previousCommissions.find(
@@ -38,10 +42,25 @@ export const updateWallet = async (
     .reduce((a1, a2) => a1 + a2, 0);
 
   const userWalletRef = db.collection('points').doc(userId);
-  const userWallet = await userWalletRef.get();
+  let userWallet = await userWalletRef.get();
   if (!userWallet.exists) {
     console.log(`Wallet of user ${userId} doesn't exist. Initializing it`);
     await createWallet(db, userId);
+    userWallet = await userWalletRef.get();
+  }
+
+  // Filter out commissions that are already stored in the transactions array
+  const currentUserTransactions = (userWallet.data() as UserWallet)
+    ?.transactions;
+  if (currentUserTransactions) {
+    unprocessedAcceptedCommissions = unprocessedAcceptedCommissions.filter(
+      (c) =>
+        currentUserTransactions.find(
+          (tx) =>
+            tx.type === TxType.COMMISSION &&
+            tx.sourceTxId === c.originId.toString(),
+        ) !== undefined,
+    );
   }
 
   const newPendingCommissions = newCommissions.filter(
@@ -72,7 +91,7 @@ export const updateWallet = async (
           : 'Cumpărătură înregistrată!🛒';
       const body =
         commission.source === Source.REFERRAL
-          ? 'Invitatul tău tocmai a cumpărat prin CharitDiscount, adică un nou bonus pentru tine'
+          ? 'Invitatul tău tocmai a cumpărat prin CharityDiscount, adică un nou bonus pentru tine'
           : `Cashback-ul in valoare de ${commission.amount}${commission.currency} este în așteptare`;
       await sendNotification(
         {
@@ -83,6 +102,12 @@ export const updateWallet = async (
         userDevices,
       );
     }
+
+    await publishMessage(
+      AchievementType.COMMISSION_PENDING,
+      commission,
+      userId,
+    );
   });
 
   await asyncForEach(
@@ -109,6 +134,8 @@ export const updateWallet = async (
           userDevices,
         );
       }
+
+      await publishMessage(AchievementType.COMMISSION_PAID, commission, userId);
     },
   );
 
@@ -144,28 +171,6 @@ const getTxFromCommissions = (
       userId: userId,
     };
   });
-};
-
-const getUserDeviceTokens = async (db: firestore.Firestore, userId: string) => {
-  const userTokenDocs = await db
-    .collection('users')
-    .doc(userId)
-    .collection('tokens')
-    .listDocuments();
-  const userDevices: string[] = [];
-  await asyncForEach(userTokenDocs, async (tokenDoc) => {
-    const tokenSnap = await tokenDoc.get();
-    const device = tokenSnap.data();
-    if (
-      device &&
-      (device.notifications === undefined || device.notifications) &&
-      device.token
-    ) {
-      userDevices.push(device.token);
-    }
-  });
-
-  return userDevices;
 };
 
 const saveTransactionsToWallet = (

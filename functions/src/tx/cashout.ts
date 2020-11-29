@@ -2,7 +2,9 @@ import * as TxDefinitions from './types';
 import { firestore } from 'firebase-admin';
 import elastic from '../elastic';
 import RejectHandler from './reject';
-import { sendEmail } from "../email";
+import { sendEmail } from '../email';
+import { publishMessage } from '../achievements/pubsub';
+import { AchievementType } from '../achievements/types';
 
 export default class CashoutHandler implements TxDefinitions.TxHandler {
   private walletRef: firestore.DocumentReference;
@@ -12,7 +14,7 @@ export default class CashoutHandler implements TxDefinitions.TxHandler {
   constructor(
     walletRef: firestore.DocumentReference,
     txRef: firestore.DocumentReference,
-    cashoutEmails: object
+    cashoutEmails: object,
   ) {
     this.walletRef = walletRef;
     this.txRef = txRef;
@@ -74,6 +76,8 @@ export default class CashoutHandler implements TxDefinitions.TxHandler {
         console.log(e);
       }
     }
+
+    await publishMessage(AchievementType.CASHOUT, tx, tx.userId);
 
     return { status: TxDefinitions.TxStatus.ACCEPTED };
   }

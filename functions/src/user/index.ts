@@ -3,6 +3,8 @@ import { ReferralRequest, Referral } from '../entities';
 import { DocumentSnapshot } from 'firebase-functions/lib/providers/firestore';
 import moment = require('moment');
 import { deleteUserData } from './delete';
+import { publishMessage } from '../achievements/pubsub';
+import { AchievementType } from '../achievements/types';
 
 export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
   db.collection('users').doc(user.uid).create({
@@ -81,6 +83,22 @@ export const handleReferral = async (
       valid: false,
       reason: 'Referral not found',
     });
+  }
+
+  try {
+    await publishMessage(
+      AchievementType.INVITE,
+      {
+        referralUser: referralUser.uid,
+        invitedUser: newUser.uid,
+        invitedAt: referralRequest.createdAt,
+      },
+      referralUser.uid,
+    );
+  } catch (error) {
+    console.log(
+      `Failed to publish message for user referral: ${error.message || error}`,
+    );
   }
 
   await requestSnap.ref.update({

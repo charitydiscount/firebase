@@ -15,7 +15,7 @@ const db = admin.firestore();
 
 import { processTx } from './tx';
 import { TxStatus } from './tx/types';
-import { updateProgramRating } from './rating';
+import { handleProgramReview } from './rating';
 import {
   createWallet,
   createUser,
@@ -25,14 +25,18 @@ import {
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import searchApp from './search';
-import commissionsUtil, { updateCommissions } from './commissions';
+import { updateCommissions } from './commissions';
 import programsApp from './programs';
 import authApp from './auth';
 import { updatePrograms as refreshPrograms } from './programs/program';
 import { updatePromotions as updateProms } from './programs/promotions';
 import adminApp from './admin';
-import { Commission } from './entities';
+import { Click, Commission } from './entities';
 import { saveUser as saveUserToElastic } from './elastic';
+import { handleClick } from './clicks';
+import { handleAchievementMessage } from './achievements/handler';
+import { FirestoreCollections } from './collections';
+import { handleRewardRequest } from './achievements/rewards';
 
 /**
  * Create the user wallet document when a new user registers
@@ -45,7 +49,7 @@ export const handleNewUser = functions
       createUser(db, user),
       createWallet(db, user.uid),
       saveUserToElastic(user),
-    ]).catch((e) => console.log(e.message)),
+    ]).catch((e) => console.error(e.message)),
   );
 
 /**
@@ -92,9 +96,9 @@ export const processTransaction = functions
 export const updateOverallRating = functions
   .region('europe-west1')
   .firestore.document('reviews/{programId}')
-  .onWrite((snap, context) => {
+  .onWrite((snap) => {
     //@ts-ignore
-    return updateProgramRating(db, snap.after.data());
+    return handleProgramReview(db, snap.before.data(), snap.after.data());
   });
 
 /**
@@ -103,7 +107,7 @@ export const updateOverallRating = functions
 export const generateOtp = functions
   .region('europe-west1')
   .firestore.document('otp-requests/{userId}')
-  .onWrite(async (snap, context) => {
+  .onWrite(async (snap) => {
     const userId = snap.after.id;
     let userRecord;
     try {
@@ -134,7 +138,7 @@ export const generateOtp = functions
 export const updateUserWallet = functions
   .region('europe-west1')
   .firestore.document('commissions/{userId}')
-  .onWrite((snap, context) => {
+  .onWrite((snap) => {
     if (!snap.after.exists) {
       return;
     }
@@ -180,14 +184,6 @@ const getUserCommissions = (commissions: {
   const { userId, ...commissionsMap } = commissions;
   return Object.values(commissionsMap);
 };
-
-export const updateCommissionsFromStorage = functions
-  .region('europe-west1')
-  .storage.bucket(commissionsUtil.bucket.name)
-  .object()
-  .onFinalize((object) =>
-    commissionsUtil.updateCommissionFromBucket(db, object),
-  );
 
 export const search = functions
   .region('europe-west1')
@@ -237,7 +233,7 @@ export const manage = functions
 export const handleReferralRequest = functions
   .region('europe-west1')
   .firestore.document('referral-requests/{requestId}')
-  .onCreate(async (snap, context) => handleReferral(db, snap));
+  .onCreate((snap) => handleReferral(db, snap));
 
 /**
  * Remove all PII of the deleted user and donate any available cashback left
@@ -245,4 +241,25 @@ export const handleReferralRequest = functions
 export const onUserDelete = functions
   .region('europe-west1')
   .auth.user()
-  .onDelete(async (user) => handleUserDelete(db, user));
+  .onDelete((user) => handleUserDelete(db, user));
+
+/**
+ * Handle shop clicks
+ */
+export const onClick = functions
+  .region('europe-west1')
+  .firestore.document('clicks/{clickId}')
+  .onCreate((snap) => handleClick(snap.data() as Click));
+
+/**
+ * Handle all achievement related messages
+ */
+export const onAchievementMessage = functions
+  .region('europe-west1')
+  .pubsub.topic('achievements')
+  .onPublish((message) => handleAchievementMessage(message, db));
+
+export const onRewardRequest = functions
+  .region('europe-west1')
+  .firestore.document(`${FirestoreCollections.REWARD_REQUESTS}/{requestId}`)
+  .onCreate((snap) => handleRewardRequest(db, snap));

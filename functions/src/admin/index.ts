@@ -12,6 +12,7 @@ import messagesController from './message';
 import settingsController from './settings';
 import mailsController from './mails';
 import clicksController from './clicks';
+import achievementsController from './achievements';
 
 const app = express();
 
@@ -79,5 +80,10 @@ app.put('/notifications/mail', mailsController.sendMailNotification);
 app.get('/clicks', clicksController.getClicks);
 app.post('/clicks', clicksController.createClick);
 app.put('/clicks/:clickId', clicksController.updateClick);
+
+//Achievements endpoints
+app.post('/achievements', achievementsController.createNewAchievement);
+app.get('/achievements', achievementsController.getAchievements);
+app.put('/achievements/:achievementId', achievementsController.updateAchievement);
 
 export default app;

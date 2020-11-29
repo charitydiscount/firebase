@@ -57,7 +57,7 @@ const validateCommission = (data: any): CheckResult => {
   const baseFieldsResult = checkObjectWithProperties(data, [
     { key: 'name', type: 'object' },
     { key: 'description', type: 'object' },
-    { key: 'badge', type: 'string' },
+    { key: 'badgeUrl', type: 'string' },
     { key: 'conditions', type: 'object' },
     { key: 'reward', type: 'object' },
     { key: 'weight', type: 'number' },

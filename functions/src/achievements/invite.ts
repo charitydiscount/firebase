@@ -1,15 +1,14 @@
-import { Click } from '../entities';
-import { Achievement, UserAchievement } from './achievement.model';
+import { Achievement, InviteData, UserAchievement } from './achievement.model';
 import { handleSimpleCountAchievements } from './common';
 
-export const handleClickAchievement = (
-  click: Click,
+export const handleInvite = (
+  invite: InviteData,
   achievement: Achievement,
   userAchievement: UserAchievement,
 ): UserAchievement =>
   handleSimpleCountAchievements(
     achievement,
     userAchievement,
-    click.programId.toString(),
+    invite.invitedUser,
     1,
   );

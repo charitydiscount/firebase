@@ -1,15 +1,15 @@
-import { Click } from '../entities';
+import { TxRequest } from '../tx/types';
 import { Achievement, UserAchievement } from './achievement.model';
 import { handleSimpleCountAchievements } from './common';
 
-export const handleClickAchievement = (
-  click: Click,
+export const handleDonation = (
+  donation: TxRequest,
   achievement: Achievement,
   userAchievement: UserAchievement,
 ): UserAchievement =>
   handleSimpleCountAchievements(
     achievement,
     userAchievement,
-    click.programId.toString(),
+    donation.id.toString(),
     1,
   );

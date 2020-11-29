@@ -1,15 +1,15 @@
-import { Click } from '../entities';
+import { Commission } from '../entities';
 import { Achievement, UserAchievement } from './achievement.model';
 import { handleSimpleCountAchievements } from './common';
 
-export const handleClickAchievement = (
-  click: Click,
+export const handleCommission = (
+  commission: Commission,
   achievement: Achievement,
   userAchievement: UserAchievement,
 ): UserAchievement =>
   handleSimpleCountAchievements(
     achievement,
     userAchievement,
-    click.programId.toString(),
+    commission.originId.toString(),
     1,
   );

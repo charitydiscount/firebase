@@ -9,7 +9,7 @@ import {
 
 export interface Achievement {
   id: string;
-  badge: string;
+  badgeUrl: string;
   conditions: AchievementCondition[];
   createdAt: firestore.Timestamp | firestore.FieldValue;
   updatedAt: firestore.Timestamp | firestore.FieldValue;
@@ -56,10 +56,8 @@ export interface AchievementRewardRequest {
   reason?: string;
 }
 
-export interface AchievementReward {
-  achievementId: string;
-  createdAt: firestore.Timestamp | firestore.FieldValue;
-  updatedAt: firestore.Timestamp | firestore.FieldValue;
-  amount: number;
-  currency: string;
+export interface InviteData {
+  referralUser: string;
+  invitedUser: string;
+  invitedAt: firestore.Timestamp;
 }

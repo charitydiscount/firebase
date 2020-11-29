@@ -3,7 +3,7 @@ import { FirestoreCollections } from '../collections';
 import { Currencies } from '../entities/currencies';
 import { NotificationTypes, sendNotification } from '../notifications/fcm';
 import { getUserDeviceTokens } from '../notifications/tokens';
-import { TxStatus } from '../tx/types';
+import { TxStatus, TxType, UserTransaction } from '../tx/types';
 import { Achievement, AchievementRewardRequest } from './achievement.model';
 
 export const handleRewardRequest = async (
@@ -37,14 +37,24 @@ export const handleRewardRequest = async (
     { merge: true },
   );
 
-  switch (reward.currency) {
+  switch (reward.unit) {
     case Currencies.CHARITY_POINTS:
+      const userTxBonus: UserTransaction = {
+        amount: reward.amount,
+        currency: Currencies.CHARITY_POINTS,
+        date: request.createdAt,
+        type: TxType.BONUS,
+        sourceTxId: requestSnap.id,
+        target: { id: request.userId, name: '' },
+        userId: request.userId,
+      };
       await db
         .collection(FirestoreCollections.WALLETS)
         .doc(request.userId)
         .set(
           {
             'points.approved': firestore.FieldValue.increment(reward.amount),
+            'transactions': firestore.FieldValue.arrayUnion(userTxBonus),
           },
           { merge: true },
         );
@@ -57,7 +67,7 @@ export const handleRewardRequest = async (
   const userDevices = await getUserDeviceTokens(db, request.userId);
   if (userDevices && userDevices.length > 0) {
     const title = 'O nouă reușită. Felicitări!🔥';
-    const body = `Tocmai ai cucerit provocarea '${request.achievement.name.ro}' și ai fost răsplătit cu ${reward.amount} ${reward.currency}`;
+    const body = `Tocmai ai cucerit provocarea '${request.achievement.name.ro}' și ai fost răsplătit cu ${reward.amount} ${reward.unit}`;
     await sendNotification(
       {
         title,

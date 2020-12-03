@@ -18,12 +18,7 @@ export async function asyncForEach<T>(array: T[], callback: (item: T) => any) {
   }
 }
 
-export const pick = (
-  obj: { [key: string]: any },
-  props: string[],
-): { [key: string]: any } | undefined => {
-  if (!obj || !props) return;
-
+export const pick = <T>(obj: { [key: string]: any }, props: string[]): T => {
   const picked = {} as { [key: string]: any };
 
   props.forEach((prop) => {
@@ -32,7 +27,7 @@ export const pick = (
     }
   });
 
-  return picked;
+  return picked as T;
 };
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

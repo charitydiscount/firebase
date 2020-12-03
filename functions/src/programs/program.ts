@@ -3,7 +3,7 @@ import { Request, Response } from 'firebase-functions';
 import { firestore } from 'firebase-admin';
 import { getAffiliateCodes, getPrograms } from '../two-performant';
 import elastic, { getElasticClient } from '../elastic';
-import { asyncForEach, arrayToObject } from '../util';
+import { asyncForEach, arrayToObject, pick } from '../util';
 
 export const getAffiliatePrograms = async (req: Request, res: Response) => {
   const { body } = await getElasticClient().search({
@@ -35,14 +35,21 @@ export const getAffiliateProgram = async (req: Request, res: Response) => {
 export async function updatePrograms(db: firestore.Firestore) {
   try {
     const newPrograms = await getPrograms();
+
     if (!newPrograms || newPrograms.length === 0) {
       console.log('No new programs');
       return;
     }
+
     const currentPrograms = await getCurrentPrograms(db);
     const programs = await getProgramsIncludingRemoved(
       db,
-      newPrograms,
+      newPrograms.map((p) =>
+        pick<entity.Program>(
+          p,
+          entity.programKeys.slice(0, entity.programKeys.length - 1),
+        ),
+      ),
       currentPrograms,
     );
     await updateProgramsGeneral(db, programs);
@@ -50,7 +57,7 @@ export async function updatePrograms(db: firestore.Firestore) {
     await updateMeta(db, programs);
 
     await elastic
-      .sendBulkRequest(elastic.buildBulkBodyForPrograms(programs))
+      .sendBulkRequest(elastic.buildBulkBodyForPrograms(newPrograms))
       .catch((e) => console.log(e));
 
     console.log(`Saved ${programs.length} programs`);

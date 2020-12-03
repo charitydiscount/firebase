@@ -40,6 +40,7 @@ export const commissionKeys = [
 export interface Program {
   id: number;
   name: string;
+  description?: string;
   mainUrl: string;
   affiliateUrl: string;
   uniqueCode: string;
@@ -98,6 +99,8 @@ export const programKeys = [
   'sellingCountries',
   'source',
 ];
+
+export const programKeysExtended = [...programKeys, 'description'];
 
 export interface Promotion {
   id: number;

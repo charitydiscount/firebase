@@ -13,6 +13,7 @@ import settingsController from './settings';
 import mailsController from './mails';
 import clicksController from './clicks';
 import achievementsController from './achievements';
+import usersController from './users';
 
 const app = express();
 
@@ -85,5 +86,9 @@ app.put('/clicks/:clickId', clicksController.updateClick);
 app.post('/achievements', achievementsController.createNewAchievement);
 app.get('/achievements', achievementsController.getAchievements);
 app.put('/achievements/:achievementId', achievementsController.updateAchievement);
+
+//Staff endpoints
+app.get('/users', usersController.retrieveAllStaffUsers);
+app.put('/users/staff/:userId', usersController.updateStaffMember);
 
 export default app;

@@ -1,6 +1,6 @@
 import { firestore } from 'firebase-admin';
-import { FirestoreCollections } from '../collections';
-import { Currencies } from '../entities/currencies';
+import { Collections } from '../collections';
+import { Currency } from '../entities/currencies';
 import { NotificationTypes, sendNotification } from '../notifications/fcm';
 import { getUserDeviceTokens } from '../notifications/tokens';
 import { TxStatus, TxType, UserTransaction } from '../tx/types';
@@ -13,7 +13,7 @@ export const handleRewardRequest = async (
   const request = requestSnap.data() as AchievementRewardRequest;
 
   const achievementSnap = await db
-    .collection(FirestoreCollections.ACHIEVEMENTS)
+    .collection(Collections.ACHIEVEMENTS)
     .doc(request.achievement.id)
     .get();
 
@@ -38,10 +38,10 @@ export const handleRewardRequest = async (
   );
 
   switch (reward.unit) {
-    case Currencies.CHARITY_POINTS:
+    case Currency.CHARITY_POINTS:
       const userTxBonus: UserTransaction = {
         amount: reward.amount,
-        currency: Currencies.CHARITY_POINTS,
+        currency: Currency.CHARITY_POINTS,
         date: request.createdAt,
         type: TxType.BONUS,
         sourceTxId: requestSnap.id,
@@ -49,7 +49,7 @@ export const handleRewardRequest = async (
         userId: request.userId,
       };
       await db
-        .collection(FirestoreCollections.WALLETS)
+        .collection(Collections.WALLETS)
         .doc(request.userId)
         .set(
           {

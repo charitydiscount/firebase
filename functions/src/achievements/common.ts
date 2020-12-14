@@ -1,5 +1,5 @@
 import { firestore } from 'firebase-admin';
-import { FirestoreCollections } from '../collections';
+import { Collections } from '../collections';
 import {
   Achievement,
   AchievementCondition,
@@ -13,7 +13,7 @@ export const getAchievements = async (
   type: AchievementType,
 ): Promise<Achievement[] | undefined> => {
   const clickAchievementsSnaps = await db
-    .collection(FirestoreCollections.ACHIEVEMENTS)
+    .collection(Collections.ACHIEVEMENTS)
     .where('type', '==', type)
     .get();
 
@@ -31,7 +31,7 @@ export const getCurrentUserAchievements = async (
   userId: string,
 ): Promise<UserAchievements> => {
   const currentAchievementsSnap = await db
-    .collection(FirestoreCollections.USER_ACHIEVEMENTS)
+    .collection(Collections.USER_ACHIEVEMENTS)
     .doc(userId)
     .get();
   const currentAchievements: UserAchievements =

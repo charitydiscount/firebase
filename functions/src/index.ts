@@ -14,7 +14,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 const db = admin.firestore();
 
 import { processTx } from './tx';
-import { TxStatus } from './tx/types';
+import { TxStatus, UserWallet } from './tx/types';
 import { handleProgramReview } from './rating';
 import {
   createWallet,
@@ -31,18 +31,21 @@ import authApp from './auth';
 import { updatePrograms as refreshPrograms } from './programs/program';
 import { updatePromotions as updateProms } from './programs/promotions';
 import adminApp from './admin';
-import { Click, Commission } from './entities';
+import { Click, Commission, Roles } from './entities';
 import { saveUser as saveUserToElastic } from './elastic';
 import { handleClick } from './clicks';
 import { handleAchievementMessage } from './achievements/handler';
-import { FirestoreCollections } from './collections';
+import { Collections } from './collections';
 import { handleRewardRequest } from './achievements/rewards';
+import { updateLeaderboard } from './leaderboard/handler';
+import { updateStaff } from './roles';
+
+const fun = () => functions.region('europe-west1');
 
 /**
  * Create the user wallet document when a new user registers
  */
-export const handleNewUser = functions
-  .region('europe-west1')
+export const handleNewUser = fun()
   .auth.user()
   .onCreate((user: functions.auth.UserRecord) =>
     Promise.all([
@@ -55,10 +58,9 @@ export const handleNewUser = functions
 /**
  * Process the donation/cashout request
  */
-export const processTransaction = functions
-  .region('europe-west1')
+export const processTransaction = fun()
   .firestore.document('requests/{requestId}')
-  .onCreate(async (snap, context) => {
+  .onCreate(async (snap) => {
     const tx = snap.data();
     if (!tx) {
       console.log(`Undefined transaction`);
@@ -93,8 +95,7 @@ export const processTransaction = functions
 /**
  * Update the average rating of a program when a rating is written
  */
-export const updateOverallRating = functions
-  .region('europe-west1')
+export const updateOverallRating = fun()
   .firestore.document('reviews/{programId}')
   .onWrite((snap) => {
     //@ts-ignore
@@ -104,8 +105,7 @@ export const updateOverallRating = functions
 /**
  * Handle the one-time password requests
  */
-export const generateOtp = functions
-  .region('europe-west1')
+export const generateOtp = fun()
   .firestore.document('otp-requests/{userId}')
   .onWrite(async (snap) => {
     const userId = snap.after.id;
@@ -135,8 +135,7 @@ export const generateOtp = functions
 /**
  * Update the user wallet on commissions update
  */
-export const updateUserWallet = functions
-  .region('europe-west1')
+export const updateUserWallet = fun()
   .firestore.document('commissions/{userId}')
   .onWrite((snap) => {
     if (!snap.after.exists) {
@@ -185,23 +184,18 @@ const getUserCommissions = (commissions: {
   return Object.values(commissionsMap);
 };
 
-export const search = functions
-  .region('europe-west1')
-  .https.onRequest(searchApp);
+export const search = fun().https.onRequest(searchApp);
 
-export const programs = functions
-  .region('europe-west1')
-  .https.onRequest(programsApp);
+export const programs = fun().https.onRequest(programsApp);
 
-export const auth = functions.region('europe-west1').https.onRequest(authApp);
+export const auth = fun().https.onRequest(authApp);
 
 const commissionsInterval =
   admin.instanceId().app.options.projectId === 'charitydiscount-test'
     ? '24 hours'
     : '10 minutes';
 
-export const updateCommissionsFromApi = functions
-  .region('europe-west1')
+export const updateCommissionsFromApi = fun()
   .runWith({
     memory: '512MB',
   })
@@ -211,14 +205,12 @@ export const updateCommissionsFromApi = functions
     return updateCommissions(db);
   });
 
-export const updatePrograms = functions
-  .region('europe-west1')
+export const updatePrograms = fun()
   .pubsub.schedule('every 24 hours')
   .timeZone('Europe/Bucharest')
   .onRun((context: any) => refreshPrograms(db));
 
-export const updatePromotions = functions
-  .region('europe-west1')
+export const updatePromotions = fun()
   .pubsub.schedule('every 12 hours')
   .timeZone('Europe/Bucharest')
   .onRun((context: any) => updateProms(db));
@@ -230,36 +222,67 @@ export const manage = functions
 /**
  * Create the referral relationship
  */
-export const handleReferralRequest = functions
-  .region('europe-west1')
+export const handleReferralRequest = fun()
   .firestore.document('referral-requests/{requestId}')
   .onCreate((snap) => handleReferral(db, snap));
 
 /**
  * Remove all PII of the deleted user and donate any available cashback left
  */
-export const onUserDelete = functions
-  .region('europe-west1')
+export const onUserDelete = fun()
   .auth.user()
   .onDelete((user) => handleUserDelete(db, user));
 
 /**
  * Handle shop clicks
  */
-export const onClick = functions
-  .region('europe-west1')
+export const onClick = fun()
   .firestore.document('clicks/{clickId}')
   .onCreate((snap) => handleClick(snap.data() as Click));
 
 /**
  * Handle all achievement related messages
  */
-export const onAchievementMessage = functions
-  .region('europe-west1')
+export const onAchievementMessage = fun()
   .pubsub.topic('achievements')
   .onPublish((message) => handleAchievementMessage(message, db));
 
-export const onRewardRequest = functions
-  .region('europe-west1')
-  .firestore.document(`${FirestoreCollections.REWARD_REQUESTS}/{requestId}`)
+/**
+ * Handle achievement rewards
+ */
+export const onRewardRequest = fun()
+  .firestore.document(`${Collections.REWARD_REQUESTS}/{requestId}`)
   .onCreate((snap) => handleRewardRequest(db, snap));
+
+/**
+ * Handle leaderboard update based on CharityPoints
+ */
+export const onWalletUpdate = fun()
+  .firestore.document(`${Collections.WALLETS}/{userId}`)
+  .onWrite((snap) => {
+    const walletBefore = snap.before.data() as UserWallet;
+    const walletAfter = snap.after.data() as UserWallet;
+
+    if (
+      walletBefore &&
+      walletAfter &&
+      walletBefore.points.approved === walletAfter.points.approved
+    ) {
+      // Leaderboard is based on CharityPoints. If no change, no update
+      // is needed
+      return;
+    }
+
+    return updateLeaderboard(db, walletAfter, snap.after.id);
+  });
+
+/**
+ * Handle role updates (e.g. update the staff attribute)
+ */
+export const onRolesUpdate = fun()
+  .firestore.document(`${Collections.ROLES}/{userId}`)
+  .onWrite((snap) => {
+    const roles = snap.after.data() as Roles;
+
+    return updateStaff(db, roles, snap.after.id);
+  });

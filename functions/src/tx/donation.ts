@@ -3,7 +3,7 @@ import { firestore } from 'firebase-admin';
 import elastic from '../elastic';
 import { publishMessage } from '../achievements/pubsub';
 import { AchievementType } from '../achievements/types';
-import { Currencies } from '../entities/currencies';
+import { Currency } from '../entities/currencies';
 
 export default class DonationHandler implements TxDefinitions.TxHandler {
   private bonusPercentage: number;
@@ -42,7 +42,7 @@ export default class DonationHandler implements TxDefinitions.TxHandler {
     };
     const userTxBonus: TxDefinitions.UserTransaction = {
       amount: generatedPoints,
-      currency: Currencies.CHARITY_POINTS,
+      currency: Currency.CHARITY_POINTS,
       date: txTimestamp,
       type: TxDefinitions.TxType.BONUS,
       sourceTxId: tx.id,

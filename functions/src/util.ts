@@ -74,3 +74,8 @@ export const isDev =
 
 export const USER_LINK_PLACEHOLDER = '{userId}';
 export const PROGRAM_LINK_PLACEHOLDER = '{programUniqueCode}';
+
+export const getEntityWithoutUserId = <T>(snapData: any): T[] =>
+  Object.entries<T>(snapData)
+    .filter(([key, _]) => key !== 'userId')
+    .map(([_, entity]) => entity);

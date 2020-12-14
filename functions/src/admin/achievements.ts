@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 import { checkObjectWithProperties, CheckResult } from '../checks';
 import { firestore } from 'firebase-admin';
-import { FirestoreCollections } from '../collections';
+import { Collections } from '../collections';
 
 const _db = firestore();
 
 export const getAchievements = (req: Request, res: Response) =>
   _db
-    .collection(FirestoreCollections.ACHIEVEMENTS)
+    .collection(Collections.ACHIEVEMENTS)
     .get()
     .then((querySnap) =>
       res.json(
@@ -25,7 +25,7 @@ export const createNewAchievement = async (req: Request, res: Response) => {
   }
 
   return _db
-    .collection(FirestoreCollections.ACHIEVEMENTS)
+    .collection(Collections.ACHIEVEMENTS)
     .add({
       ...req.body,
       createdAt: firestore.FieldValue.serverTimestamp(),
@@ -41,7 +41,7 @@ export const updateAchievement = async (req: Request, res: Response) => {
   }
 
   const saveResult = await _db
-    .collection(FirestoreCollections.ACHIEVEMENTS)
+    .collection(Collections.ACHIEVEMENTS)
     .doc(req.params.achievementId)
     .set(
       {

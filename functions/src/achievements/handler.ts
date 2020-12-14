@@ -1,6 +1,6 @@
 import { firestore } from 'firebase-admin';
 import { pubsub } from 'firebase-functions';
-import { FirestoreCollections } from '../collections';
+import { Collections } from '../collections';
 import { TxStatus } from '../tx/types';
 import {
   Achievement,
@@ -72,14 +72,14 @@ export const handleAchievementMessage = async (
         status: TxStatus.PENDING,
       };
       await db
-        .collection(FirestoreCollections.REWARD_REQUESTS)
+        .collection(Collections.REWARD_REQUESTS)
         .doc(`${userId}_${achievement.id}`)
         .set(rewardRequest);
     }
   }
 
   await db
-    .collection(FirestoreCollections.USER_ACHIEVEMENTS)
+    .collection(Collections.USER_ACHIEVEMENTS)
     .doc(userId)
     .set({ userId, ...userAchievements }, { merge: true });
 };

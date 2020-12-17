@@ -59,7 +59,7 @@ export const updateWallet = async (
           (tx) =>
             tx.type === TxType.COMMISSION &&
             tx.sourceTxId === c.originId.toString(),
-        ) !== undefined,
+        ) === undefined,
     );
   }
 

@@ -16,22 +16,16 @@ const db = admin.firestore();
 import { processTx } from './tx';
 import { TxStatus, UserWallet } from './tx/types';
 import { handleProgramReview } from './rating';
-import {
-  createWallet,
-  createUser,
-  handleReferral,
-  handleUserDelete,
-} from './user';
+import { createUser, handleReferral, handleUserDelete } from './user';
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import searchApp from './search';
 import { updateCommissions } from './commissions';
-import programsApp from './programs';
 import authApp from './auth';
 import { updatePrograms as refreshPrograms } from './programs/program';
 import { updatePromotions as updateProms } from './programs/promotions';
 import adminApp from './admin';
-import { Click, Commission, Roles } from './entities';
+import { Click, Commission, ProgramReviews, Roles } from './entities';
 import { saveUser as saveUserToElastic } from './elastic';
 import { handleClick } from './clicks';
 import { handleAchievementMessage } from './achievements/handler';
@@ -47,13 +41,13 @@ const fun = () => functions.region('europe-west1');
  */
 export const handleNewUser = fun()
   .auth.user()
-  .onCreate((user: functions.auth.UserRecord) =>
-    Promise.all([
-      createUser(db, user),
-      createWallet(db, user.uid),
-      saveUserToElastic(user),
-    ]).catch((e) => console.error(e.message)),
-  );
+  .onCreate(async (user: functions.auth.UserRecord) => {
+    try {
+      await Promise.all([createUser(db, user), saveUserToElastic(user)]);
+    } catch (error) {
+      console.error(error.message);
+    }
+  });
 
 /**
  * Process the donation/cashout request
@@ -98,8 +92,11 @@ export const processTransaction = fun()
 export const updateOverallRating = fun()
   .firestore.document('reviews/{programId}')
   .onWrite((snap) => {
-    //@ts-ignore
-    return handleProgramReview(db, snap.before.data(), snap.after.data());
+    return handleProgramReview(
+      db,
+      snap.before.data() as ProgramReviews,
+      snap.after.data() as ProgramReviews,
+    );
   });
 
 /**
@@ -113,7 +110,6 @@ export const generateOtp = fun()
     try {
       userRecord = await admin.auth().getUser(userId);
     } catch (e) {
-      // user doesn't exist
       console.log(`User ${userId} doesn't exist`);
       return;
     }
@@ -186,8 +182,6 @@ const getUserCommissions = (commissions: {
 
 export const search = fun().https.onRequest(searchApp);
 
-export const programs = fun().https.onRequest(programsApp);
-
 export const auth = fun().https.onRequest(authApp);
 
 const commissionsInterval =
@@ -201,19 +195,19 @@ export const updateCommissionsFromApi = fun()
   })
   .pubsub.schedule(`every ${commissionsInterval}`)
   .timeZone('Europe/Bucharest')
-  .onRun((context: any) => {
+  .onRun((_: any) => {
     return updateCommissions(db);
   });
 
 export const updatePrograms = fun()
   .pubsub.schedule('every 24 hours')
   .timeZone('Europe/Bucharest')
-  .onRun((context: any) => refreshPrograms(db));
+  .onRun((_: any) => refreshPrograms(db));
 
 export const updatePromotions = fun()
   .pubsub.schedule('every 12 hours')
   .timeZone('Europe/Bucharest')
-  .onRun((context: any) => updateProms(db));
+  .onRun((_: any) => updateProms(db));
 
 export const manage = functions
   .region('europe-west1')
@@ -259,7 +253,7 @@ export const onRewardRequest = fun()
  */
 export const onWalletUpdate = fun()
   .firestore.document(`${Collections.WALLETS}/{userId}`)
-  .onWrite((snap) => {
+  .onUpdate((snap) => {
     const walletBefore = snap.before.data() as UserWallet;
     const walletAfter = snap.after.data() as UserWallet;
 
@@ -269,7 +263,7 @@ export const onWalletUpdate = fun()
       walletBefore.points.approved === walletAfter.points.approved
     ) {
       // Leaderboard is based on CharityPoints. If no change, no update
-      // is needed
+      // is needed. This also applies if the wallet was just created
       return;
     }
 
@@ -286,3 +280,11 @@ export const onRolesUpdate = fun()
 
     return updateStaff(db, roles, snap.after.id);
   });
+
+// export const populateAuthUsers = fun().https.onRequest(importUsersInAuth());
+
+// export const findWrongWallets = fun().https.onRequest(async (req, res) => {
+//   const missingCommissions = await getWalletsWithMissingCommissions(db);
+//   res.header('Content-type', 'application/json');
+//   res.status(200).send(JSON.stringify(missingCommissions));
+// });

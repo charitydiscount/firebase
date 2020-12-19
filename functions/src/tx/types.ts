@@ -64,6 +64,7 @@ export interface UserWallet {
     approved: number;
   };
   transactions: UserTransaction[];
+  userId: string;
 }
 
 export interface TxHandler {

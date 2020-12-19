@@ -59,7 +59,8 @@ typings/
 
 # next.js build output
 .next
-
 .firebase
-
 .idea/
+*.csv
+firestore/
+cd-*.json

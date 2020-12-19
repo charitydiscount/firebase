@@ -6,4 +6,5 @@ export enum Collections {
   LEADERBOARD = 'leaderboard',
   USERS = 'users',
   ROLES = 'roles',
+  COMMISSIONS = 'commissions',
 }

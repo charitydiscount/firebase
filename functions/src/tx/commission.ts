@@ -191,10 +191,12 @@ const saveTransactionsToWallet = (
         incommingAcceptedAmount,
       ),
       'transactions': firestore.FieldValue.arrayUnion(...newTransactions),
+      userId,
     });
   } else {
     return walletRef.update({
       'cashback.pending': totalPendingAmount,
+      userId,
     });
   }
 };

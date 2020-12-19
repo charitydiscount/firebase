@@ -27,6 +27,7 @@ export const createWallet = (db: firestore.Firestore, userId: string) =>
         approved: 0.0,
         pending: 0.0,
       },
+      userId,
     });
 
 export const handleReferral = async (

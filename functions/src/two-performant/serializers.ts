@@ -173,10 +173,7 @@ export const programsFromJson = (json: any): ProgramsResponse => {
 
 export const toProgramEntity = (program: Program) => {
   //@ts-ignore
-  const entityProgram: entity.Program = pick(
-    program,
-    entity.programKeysExtended,
-  );
+  const entityProgram: entity.Program = pick(program, entity.programKeys);
   entityProgram.category = program.category.name;
   return entityProgram;
 };

@@ -87,9 +87,7 @@ export const updateStaffMember = async (req: Request, res: Response) => {
     if (leaderboardEntryRef.exists) {
         await leaderboardDocRef.set(
             {
-                user: {
-                    staff: booleanValue
-                }
+                isStaff: booleanValue
             },
             {merge: true}
         );

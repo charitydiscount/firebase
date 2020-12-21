@@ -8,4 +8,5 @@ export interface LeaderboardEntry {
   updatedAt: firestore.Timestamp | firestore.FieldValue;
   isStaff: boolean;
   achievementsCount: number;
+  anonym?: boolean;
 }

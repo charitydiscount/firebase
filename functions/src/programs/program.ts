@@ -2,7 +2,7 @@ import * as entity from '../entities';
 import { firestore } from 'firebase-admin';
 import { getAffiliateCodes, getPrograms } from '../two-performant';
 import elastic from '../elastic';
-import { asyncForEach, arrayToObject, pick } from '../util';
+import { asyncForEach, arrayToObject } from '../util';
 
 /**
  * Update the stored programs
@@ -20,12 +20,7 @@ export async function updatePrograms(db: firestore.Firestore) {
     const currentPrograms = await getCurrentPrograms(db);
     const programs = await getProgramsIncludingRemoved(
       db,
-      newPrograms.map((p) =>
-        pick<entity.Program>(
-          p,
-          entity.programKeys.slice(0, entity.programKeys.length - 1),
-        ),
-      ),
+      newPrograms,
       currentPrograms,
     );
     await updateProgramsGeneral(db, programs);
@@ -33,7 +28,7 @@ export async function updatePrograms(db: firestore.Firestore) {
     await updateMeta(db, programs);
 
     await elastic
-      .sendBulkRequest(elastic.buildBulkBodyForPrograms(newPrograms))
+      .sendBulkRequest(elastic.buildBulkBodyForPrograms(programs))
       .catch((e) => console.log(e));
 
     console.log(`Saved ${programs.length} programs`);

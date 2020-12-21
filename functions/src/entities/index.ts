@@ -100,8 +100,6 @@ export const programKeys = [
   'source',
 ];
 
-export const programKeysExtended = [...programKeys, 'description'];
-
 export interface Promotion {
   id: number;
   name: string;

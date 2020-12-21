@@ -258,9 +258,10 @@ export const onWalletUpdate = fun()
     const walletAfter = snap.after.data() as UserWallet;
 
     if (
-      walletBefore &&
-      walletAfter &&
-      walletBefore.points.approved === walletAfter.points.approved
+      !walletBefore ||
+      (walletBefore &&
+        walletAfter &&
+        walletBefore.points.approved === walletAfter.points.approved)
     ) {
       // Leaderboard is based on CharityPoints. If no change, no update
       // is needed. This also applies if the wallet was just created

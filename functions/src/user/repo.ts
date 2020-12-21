@@ -1,6 +1,7 @@
 import { firestore } from 'firebase-admin';
 import { Collections } from '../collections';
-import { Roles, User } from '../entities';
+import { Roles } from '../entities';
+import { User } from './user.model';
 
 export const getUser = async (
   db: firestore.Firestore,

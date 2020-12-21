@@ -1,8 +1,9 @@
 import * as admin from 'firebase-admin';
 import { Request, Response } from 'express';
-import { Roles, User } from '../entities';
+import { Roles } from '../entities';
 import { UserDto } from './dtos/user.dto';
 import { Collections } from '../collections';
+import { User } from '../user/user.model';
 
 const _db = admin.firestore();
 

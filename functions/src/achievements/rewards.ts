@@ -51,12 +51,11 @@ export const handleRewardRequest = async (
       await db
         .collection(Collections.WALLETS)
         .doc(request.userId)
-        .set(
+        .update(
           {
             'points.approved': firestore.FieldValue.increment(reward.amount),
             'transactions': firestore.FieldValue.arrayUnion(userTxBonus),
-          },
-          { merge: true },
+          }
         );
       break;
     default:

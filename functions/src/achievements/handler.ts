@@ -48,7 +48,7 @@ export const handleAchievementMessage = async (
   for (const achievement of achievements) {
     const current = currentAchievements[achievement.id];
     if (current && current.achieved) {
-      return;
+      continue;
     }
 
     try {

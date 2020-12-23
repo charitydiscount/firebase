@@ -10,7 +10,7 @@ export const updateStaff = async (
 ) => {
   const isStaff = !!roles && roles.admin === true;
 
-  await updateUser(db, { staff: isStaff }, userId);
+  await updateUser(db, { isStaff: isStaff }, userId);
   await updateLeaderboardEntry(db, { isStaff }, userId);
   await auth().setCustomUserClaims(userId, roles);
 };

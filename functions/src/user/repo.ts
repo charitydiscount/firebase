@@ -25,7 +25,7 @@ export const getUser = async (
 
   const user: User = {
     ...(userSnap.data() as User),
-    staff: !!roles,
+    isStaff: !!roles,
   };
 
   return user;

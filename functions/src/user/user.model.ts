@@ -1,9 +1,8 @@
 export interface User {
   userId: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   photoUrl: string;
   disableMailNotification: boolean;
-  staff: boolean;
+  isStaff: boolean;
 }

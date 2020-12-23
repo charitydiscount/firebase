@@ -1,7 +1,6 @@
 import * as admin from 'firebase-admin';
 import { Request, Response } from 'express';
 import { Roles } from '../entities';
-import { UserDto } from './dtos/user.dto';
 import { Collections } from '../collections';
 import { User } from '../user/user.model';
 
@@ -18,13 +17,12 @@ export const retrieveAllStaffUsers = async (req: Request, res: Response) => {
   const rolesSnap = await _db.collection(Collections.ROLES).get();
   const roles: { [userId: string]: Roles } = {};
   rolesSnap.docs.forEach((doc) => {
-    roles[doc.id] = doc.data() as Roles;
+    roles[doc.id.trim()] = doc.data() as Roles;  //trim the ID because some ID has white space as prefix
   });
 
-  //get info about admin users which are not yet staff members
   const usersWithRoles = Object.keys(roles);
 
-  const result = [] as UserDto[];
+  const result = [] as User[];
   if (usersWithRoles && usersWithRoles.length > 0) {
     const querySnap = await _db
       .collection(Collections.USERS)
@@ -34,8 +32,7 @@ export const retrieveAllStaffUsers = async (req: Request, res: Response) => {
     querySnap.docs.forEach((docSnap) => {
       result.push({
         ...(docSnap.data() as User),
-        userId: docSnap.id,
-        roles: roles[docSnap.id],
+        userId: docSnap.id
       });
     });
   }
@@ -62,27 +59,14 @@ export const updateStaffMember = async (req: Request, res: Response) => {
     return res.status(404).json('User not found in USERS table!');
   }
 
-  const booleanValue = req.body.staff === 'true';
-  //first update in leaderboard if entry exists
-  const leaderboardDocRef = _db
-    .collection(Collections.LEADERBOARD)
-    .doc(req.params.userId);
-  const leaderboardEntryRef = await leaderboardDocRef.get();
-  if (leaderboardEntryRef.exists) {
-    await leaderboardDocRef.set(
-      {
-        isStaff: booleanValue,
-      },
-      { merge: true },
-    );
-  }
+  const booleanValue = req.body.isStaff === 'true';
 
-  //update in USERS
-  return usersDocRef
-    .update({
-      staff: booleanValue,
-    })
-    .then(() => res.sendStatus(200));
+  //update in roles
+  return await _db.collection(Collections.ROLES)
+      .doc(req.params.userId.trim())
+      .set({admin: booleanValue}, {merge: true})
+      .then(() => res.sendStatus(200))
+      .catch(() => res.status(500).json('Server error'));
 };
 
 export default {

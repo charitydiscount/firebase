@@ -18,12 +18,14 @@ export const updateLeaderboard = async (
     return;
   }
 
-  const achievements = await getUserAchievements(db, userId);
+  let achievements = await getUserAchievements(db, userId);
+  //count only achieved entries
+  achievements = achievements.filter(value => { return value.achieved});
 
   const entry: LeaderboardEntry = {
     achievementsCount: achievements.length,
-    isStaff: user.staff,
-    name: `${user.firstName} ${user.lastName}`,
+    isStaff: user.isStaff,
+    name: `${user.name}`,
     photoUrl: user.photoUrl,
     points: points,
     updatedAt: firestore.FieldValue.serverTimestamp(),

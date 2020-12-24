@@ -37,16 +37,26 @@ import { updateStaff } from './roles';
 const fun = () => functions.region('europe-west1');
 
 /**
- * Create the user wallet document when a new user registers
+ * Create the user entry document when a new user registers
  */
 export const handleNewUser = fun()
   .auth.user()
   .onCreate(async (user: functions.auth.UserRecord) => {
-    try {
-      await Promise.all([createUser(db, user), saveUserToElastic(user)]);
-    } catch (error) {
-      console.error(error.message);
-    }
+      try {
+          //below code is needed because firebase has a bug, if an user creates an account by email, in this step
+          //the displayName will not be visible yet
+          await admin.auth().getUser(user.uid)
+              .then(function (userRecord) {
+                  //by doing this the displayName will be available
+                  user.displayName = userRecord.displayName;
+              })
+              .catch(function (error) {
+                  //error nothing will happen, for auth type 'password' the displayName will be missing
+              });
+          await Promise.all([createUser(db, user), saveUserToElastic(user)]);
+      } catch (error) {
+          console.error(error.message);
+      }
   });
 
 /**

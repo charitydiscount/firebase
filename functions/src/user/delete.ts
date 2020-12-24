@@ -4,6 +4,7 @@ import { isDev } from '../util';
 import { sendEmail } from '../email';
 import { deleteAccountMailBody } from '../email/content';
 import { deleteUser as deleteUserFromElastic } from '../elastic';
+import { Collections } from "../collections";
 
 /**
  * - send email
@@ -66,6 +67,24 @@ export const deleteUserData = async (
   const accountDocs = await userRef.collection('accounts').listDocuments();
   for (const doc of accountDocs) {
     await doc.delete();
+  }
+
+  //Delete user from leaderboard if exists
+  const leaderboardDoc = await db
+      .collection(Collections.LEADERBOARD)
+      .doc(user.uid);
+  const leaderboardRef = await leaderboardDoc.get();
+  if (leaderboardRef.exists) {
+    await leaderboardDoc.delete();
+  }
+
+  //Delete user achievements if it has
+  const achievementsDoc = await db
+      .collection(Collections.USER_ACHIEVEMENTS)
+      .doc(user.uid);
+  const achievementsRef = await achievementsDoc.get();
+  if (achievementsRef.exists) {
+    await achievementsDoc.delete();
   }
 
   // Delete user document

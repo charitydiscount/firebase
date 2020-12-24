@@ -5,6 +5,7 @@ import { NotificationTypes, sendNotification } from '../notifications/fcm';
 import { getUserDeviceTokens } from '../notifications/tokens';
 import { TxStatus, TxType, UserTransaction } from '../tx/types';
 import { Achievement, AchievementRewardRequest } from './achievement.model';
+import { createWallet } from "../user";
 
 export const handleRewardRequest = async (
   db: firestore.Firestore,
@@ -48,9 +49,13 @@ export const handleRewardRequest = async (
         target: { id: request.userId, name: '' },
         userId: request.userId,
       };
-      await db
-        .collection(Collections.WALLETS)
-        .doc(request.userId)
+      const userWalletRef = db.collection(Collections.WALLETS).doc(request.userId);
+      let userWallet = await userWalletRef.get();
+      if (!userWallet.exists) {
+        console.log(`Wallet of user ${request.userId} doesn't exist. Initializing it`);
+        await createWallet(db, request.userId);
+      }
+      await userWalletRef
         .update(
           {
             'points.approved': firestore.FieldValue.increment(reward.amount),

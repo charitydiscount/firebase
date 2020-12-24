@@ -5,6 +5,7 @@ import moment = require('moment');
 import { deleteUserData } from './delete';
 import { publishMessage } from '../achievements/pubsub';
 import { AchievementType } from '../achievements/types';
+import { Collections } from "../collections";
 
 export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
   db.collection('users').doc(user.uid).create({
@@ -16,7 +17,7 @@ export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
 
 export const createWallet = (db: firestore.Firestore, userId: string) =>
   db
-    .collection('points')
+    .collection(Collections.WALLETS)
     .doc(userId)
     .create({
       cashback: {

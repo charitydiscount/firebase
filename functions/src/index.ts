@@ -43,16 +43,13 @@ export const handleNewUser = fun()
   .auth.user()
   .onCreate(async (user: functions.auth.UserRecord) => {
       try {
-          //below code is needed because firebase has a bug, if an user creates an account by email, in this step
-          //the displayName will not be visible yet
-          await admin.auth().getUser(user.uid)
-              .then(function (userRecord) {
-                  //by doing this the displayName will be available
-                  user.displayName = userRecord.displayName;
-              })
-              .catch(function (error) {
-                  //error nothing will happen, for auth type 'password' the displayName will be missing
-              });
+          if (!user.displayName) {
+              //below code is needed because firebase has a bug, if an user creates an account by email, in this step
+              //the displayName will not be visible yet
+              const userRecord = await admin.auth().getUser(user.uid);
+              //by doing this the displayName will be available
+              user.displayName = userRecord.displayName;
+          }
           await Promise.all([createUser(db, user), saveUserToElastic(user)]);
       } catch (error) {
           console.error(error.message);

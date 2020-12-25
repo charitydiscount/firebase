@@ -5,7 +5,11 @@ import moment = require('moment');
 import { deleteUserData } from './delete';
 import { publishMessage } from '../achievements/pubsub';
 import { AchievementType } from '../achievements/types';
-import { Collections } from "../collections";
+import { Collections } from '../collections';
+import { User } from './user.model';
+import { getUserReviews } from '../rating/repo';
+import { getUserLeaderboardEntry } from '../leaderboard/repo';
+import { userToReviewer } from './mapper';
 
 export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
   db.collection('users').doc(user.uid).create({
@@ -120,3 +124,29 @@ const getUserForReferral = (referralRequest: ReferralRequest) =>
   auth().getUser(referralRequest.referralCode);
 
 export const handleUserDelete = deleteUserData;
+
+export const handleUserConsistency = async (
+  db: firestore.Firestore,
+  user: User,
+) => {
+  // Update in reviews
+  const batch = db.batch();
+
+  const reviewsSnap = await getUserReviews(db, user.userId);
+  if (!reviewsSnap.empty) {
+    const reviewer = userToReviewer(user);
+    for (const reviewSnap of reviewsSnap.docs) {
+      batch.update(reviewSnap.ref, {
+        [`reviews.${user.userId}.reviewer`]: reviewer,
+      });
+    }
+  }
+
+  // Update in leaderboard
+  const entrySnap = await getUserLeaderboardEntry(db, user.userId);
+  if (entrySnap.exists) {
+    batch.update(entrySnap.ref, userToReviewer(user));
+  }
+
+  await batch.commit();
+};

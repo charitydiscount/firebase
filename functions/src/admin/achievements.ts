@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { checkObjectWithProperties, CheckResult } from '../checks';
 import { firestore } from 'firebase-admin';
 import { Collections } from '../collections';
+import { pick } from 'lodash';
 
 const _db = firestore();
 
@@ -45,7 +46,15 @@ export const updateAchievement = async (req: Request, res: Response) => {
     .doc(req.params.achievementId)
     .set(
       {
-        ...req.body,
+        ...pick(req.body, [
+          'name',
+          'description',
+          'badgeUrl',
+          'conditions',
+          'reward',
+          'type',
+          'order',
+        ]),
         updatedAt: firestore.FieldValue.serverTimestamp(),
       },
       { merge: true },
@@ -60,7 +69,6 @@ const validateCommission = (data: any): CheckResult => {
     { key: 'badgeUrl', type: 'string' },
     { key: 'conditions', type: 'object' },
     { key: 'reward', type: 'object' },
-    { key: 'weight', type: 'number' },
     { key: 'type', type: 'string' },
     { key: 'order', type: 'number', optional: true },
   ]);

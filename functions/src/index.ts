@@ -16,7 +16,12 @@ const db = admin.firestore();
 import { processTx } from './tx';
 import { TxStatus, UserWallet } from './tx/types';
 import { handleProgramReview } from './rating';
-import { createUser, handleReferral, handleUserDelete } from './user';
+import {
+  createUser,
+  handleReferral,
+  handleUserConsistency,
+  handleUserDelete,
+} from './user';
 import { handleNewOtp } from './otp';
 import { updateWallet } from './tx/commission';
 import searchApp from './search';
@@ -25,7 +30,7 @@ import authApp from './auth';
 import { updatePrograms as refreshPrograms } from './programs/program';
 import { updatePromotions as updateProms } from './programs/promotions';
 import adminApp from './admin';
-import { Click, Commission, ProgramReviews, Roles } from './entities';
+import { Click, Commission, Roles } from './entities';
 import { saveUser as saveUserToElastic } from './elastic';
 import { handleClick } from './clicks';
 import { handleAchievementMessage } from './achievements/handler';
@@ -33,6 +38,8 @@ import { Collections } from './collections';
 import { handleRewardRequest } from './achievements/rewards';
 import { updateLeaderboard } from './leaderboard/handler';
 import { updateStaff } from './roles';
+import { ProgramReviews } from './rating/review.model';
+import { User } from './user/user.model';
 
 const fun = () => functions.region('europe-west1');
 
@@ -42,18 +49,18 @@ const fun = () => functions.region('europe-west1');
 export const handleNewUser = fun()
   .auth.user()
   .onCreate(async (user: functions.auth.UserRecord) => {
-      try {
-          if (!user.displayName) {
-              //below code is needed because firebase has a bug, if an user creates an account by email, in this step
-              //the displayName will not be visible yet
-              const userRecord = await admin.auth().getUser(user.uid);
-              //by doing this the displayName will be available
-              user.displayName = userRecord.displayName;
-          }
-          await Promise.all([createUser(db, user), saveUserToElastic(user)]);
-      } catch (error) {
-          console.error(error.message);
+    try {
+      if (!user.displayName) {
+        //below code is needed because firebase has a bug, if an user creates an account by email, in this step
+        //the displayName will not be visible yet
+        const userRecord = await admin.auth().getUser(user.uid);
+        //by doing this the displayName will be available
+        user.displayName = userRecord.displayName;
       }
+      await Promise.all([createUser(db, user), saveUserToElastic(user)]);
+    } catch (error) {
+      console.error(error.message);
+    }
   });
 
 /**
@@ -260,15 +267,14 @@ export const onRewardRequest = fun()
  */
 export const onWalletUpdate = fun()
   .firestore.document(`${Collections.WALLETS}/{userId}`)
-  .onUpdate((snap) => {
+  .onUpdate(async (snap) => {
     const walletBefore = snap.before.data() as UserWallet;
     const walletAfter = snap.after.data() as UserWallet;
 
     if (
-      !walletBefore ||
-      (walletBefore &&
-        walletAfter &&
-        walletBefore.points.approved === walletAfter.points.approved)
+      walletBefore &&
+      walletAfter &&
+      walletBefore.points.approved === walletAfter.points.approved
     ) {
       // Leaderboard is based on CharityPoints. If no change, no update
       // is needed. This also applies if the wallet was just created
@@ -287,6 +293,28 @@ export const onRolesUpdate = fun()
     const roles = snap.after.data() as Roles;
 
     return updateStaff(db, roles, snap.after.id);
+  });
+
+/**
+ * Update user's info in other documents
+ */
+export const onUserUpdate = fun()
+  .firestore.document(`${Collections.USERS}/{userId}`)
+  .onUpdate(async (snap) => {
+    const userBefore = snap.before.data() as User;
+    const userAfter = snap.after.data() as User;
+
+    if (
+      userBefore.name === userAfter.name &&
+      userBefore.photoUrl === userAfter.photoUrl &&
+      userBefore.privateName === userAfter.privateName &&
+      userBefore.privatePhoto === userAfter.privatePhoto
+    ) {
+      // No change in relevant fields
+      return;
+    }
+
+    return handleUserConsistency(db, userAfter);
   });
 
 // export const populateAuthUsers = fun().https.onRequest(importUsersInAuth());

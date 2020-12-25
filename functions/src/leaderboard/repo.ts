@@ -2,6 +2,11 @@ import { firestore } from 'firebase-admin';
 import { Collections } from '../collections';
 import { LeaderboardTop } from './leaderboard.model';
 
+export const getUserLeaderboardEntry = async (
+  db: firestore.Firestore,
+  userId: string,
+) => db.collection(Collections.LEADERBOARD).doc(userId).get();
+
 export const updateLeaderboardEntry = async (
   db: firestore.Firestore,
   entry: any,

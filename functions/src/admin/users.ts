@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import { Request, Response } from 'express';
 import { Roles } from '../entities';
+import { UserDto } from './dtos/user.dto';
 import { Collections } from '../collections';
 import { User } from '../user/user.model';
 
@@ -17,12 +18,13 @@ export const retrieveAllStaffUsers = async (req: Request, res: Response) => {
   const rolesSnap = await _db.collection(Collections.ROLES).get();
   const roles: { [userId: string]: Roles } = {};
   rolesSnap.docs.forEach((doc) => {
-    roles[doc.id.trim()] = doc.data() as Roles;  //trim the ID because some ID has white space as prefix
+    roles[doc.id.trim()] = doc.data() as Roles;
   });
 
+  //get info about admin users which are not yet staff members
   const usersWithRoles = Object.keys(roles);
 
-  const result = [] as User[];
+  const result = [] as UserDto[];
   if (usersWithRoles && usersWithRoles.length > 0) {
     const querySnap = await _db
       .collection(Collections.USERS)
@@ -32,7 +34,8 @@ export const retrieveAllStaffUsers = async (req: Request, res: Response) => {
     querySnap.docs.forEach((docSnap) => {
       result.push({
         ...(docSnap.data() as User),
-        userId: docSnap.id
+        userId: docSnap.id,
+        roles: roles[docSnap.id],
       });
     });
   }
@@ -47,26 +50,21 @@ export const retrieveAllStaffUsers = async (req: Request, res: Response) => {
  * @param res Express response
  */
 export const updateStaffMember = async (req: Request, res: Response) => {
+  const userId = req.params.userId;
   try {
-    await admin.auth().getUser(req.params.userId);
+    await admin.auth().getUser(userId);
   } catch (e) {
     return res.status(404).json('User not found!');
   }
 
-  const usersDocRef = _db.collection('users').doc(req.params.userId);
-  const userEntryRef = await usersDocRef.get();
-  if (!userEntryRef.exists) {
-    return res.status(404).json('User not found in USERS table!');
-  }
+  const isAdmin = req.body.admin === true;
 
-  const booleanValue = req.body.isStaff === 'true';
+  await _db
+    .collection(Collections.ROLES)
+    .doc(userId)
+    .set({ admin: isAdmin }, { merge: true });
 
-  //update in roles
-  return await _db.collection(Collections.ROLES)
-      .doc(req.params.userId.trim())
-      .set({admin: booleanValue}, {merge: true})
-      .then(() => res.sendStatus(200))
-      .catch(() => res.status(500).json('Server error'));
+  return res.sendStatus(200);
 };
 
 export default {

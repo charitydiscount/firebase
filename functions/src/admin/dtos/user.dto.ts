@@ -1,10 +1,10 @@
-export interface User {
+import { Roles } from '../../entities';
+
+export interface UserDto {
   userId: string;
   name: string;
   email: string;
   photoUrl: string;
   disableMailNotification: boolean;
-  isStaff: boolean;
-  privateName?: boolean;
-  privatePhoto?: boolean;
+  roles: Roles;
 }

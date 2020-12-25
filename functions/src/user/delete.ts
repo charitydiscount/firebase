@@ -4,7 +4,9 @@ import { isDev } from '../util';
 import { sendEmail } from '../email';
 import { deleteAccountMailBody } from '../email/content';
 import { deleteUser as deleteUserFromElastic } from '../elastic';
-import { Collections } from "../collections";
+import { Collections } from '../collections';
+import { getUserReviews } from '../rating/repo';
+import { getUserLeaderboardEntry } from '../leaderboard/repo';
 
 /**
  * - send email
@@ -45,10 +47,7 @@ export const deleteUserData = async (
   }
 
   // Anonymize user's reviews
-  const shopReviews = await db
-    .collection('reviews')
-    .where(`reviews.${user.uid}`, '>', '')
-    .get();
+  const shopReviews = await getUserReviews(db, user.uid);
   for (const doc of shopReviews.docs) {
     await doc.ref.update({
       [`reviews.${user.uid}.reviewer.name`]: '-',
@@ -69,22 +68,19 @@ export const deleteUserData = async (
     await doc.delete();
   }
 
-  //Delete user from leaderboard if exists
-  const leaderboardDoc = await db
-      .collection(Collections.LEADERBOARD)
-      .doc(user.uid);
-  const leaderboardRef = await leaderboardDoc.get();
+  // Delete user from leaderboard if exists
+  const leaderboardRef = await getUserLeaderboardEntry(db, user.uid);
   if (leaderboardRef.exists) {
-    await leaderboardDoc.delete();
+    await leaderboardRef.ref.delete();
   }
 
-  //Delete user achievements if it has
-  const achievementsDoc = await db
-      .collection(Collections.USER_ACHIEVEMENTS)
-      .doc(user.uid);
-  const achievementsRef = await achievementsDoc.get();
+  // Delete user achievements
+  const achievementsRef = await db
+    .collection(Collections.USER_ACHIEVEMENTS)
+    .doc(user.uid)
+    .get();
   if (achievementsRef.exists) {
-    await achievementsDoc.delete();
+    await achievementsRef.ref.delete();
   }
 
   // Delete user document

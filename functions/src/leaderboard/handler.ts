@@ -39,11 +39,9 @@ export const updateLeaderboard = async (
     .collection(Collections.LEADERBOARD)
     .doc(userId)
     .set(entry, { merge: true });
-
-  await updateLeaderboardTop(db, entry);
 };
 
-const updateLeaderboardTop = async (
+export const updateLeaderboardTop = async (
   db: firestore.Firestore,
   entry: LeaderboardEntry,
 ) => {

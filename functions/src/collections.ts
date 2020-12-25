@@ -7,4 +7,5 @@ export enum Collections {
   USERS = 'users',
   ROLES = 'roles',
   COMMISSIONS = 'commissions',
+  REVIEWS = 'reviews',
 }

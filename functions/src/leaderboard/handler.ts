@@ -3,7 +3,8 @@ import { getUserAchievements } from '../achievements/repo';
 import { Collections } from '../collections';
 import { UserWallet } from '../tx/types';
 import { getUser } from '../user/repo';
-import { LeaderboardEntry } from './leaderboard.model';
+import { LeaderboardEntry, LeaderboardTop } from './leaderboard.model';
+import { getTopDocument } from './repo';
 
 export const updateLeaderboard = async (
   db: firestore.Firestore,
@@ -20,7 +21,9 @@ export const updateLeaderboard = async (
 
   let achievements = await getUserAchievements(db, userId);
   //count only achieved entries
-  achievements = achievements.filter(value => { return value.achieved});
+  achievements = achievements.filter((value) => {
+    return value.achieved;
+  });
 
   const entry: LeaderboardEntry = {
     achievementsCount: achievements.length,
@@ -36,4 +39,28 @@ export const updateLeaderboard = async (
     .collection(Collections.LEADERBOARD)
     .doc(userId)
     .set(entry, { merge: true });
+
+  await updateLeaderboardTop(db, entry);
+};
+
+const updateLeaderboardTop = async (
+  db: firestore.Firestore,
+  entry: LeaderboardEntry,
+) => {
+  const topSnap = await getTopDocument(db);
+  const top = topSnap.data() as LeaderboardTop;
+
+  if (entry.points <= top.lowestPoints) {
+    return;
+  }
+
+  const entries = top.entries.concat(...[entry]);
+  entries.sort((e1, e2) => e2.points - e1.points);
+  const newTopEntries = entries.slice(0, top.totalCount);
+
+  await topSnap.ref.update({
+    lowestPoints: newTopEntries[newTopEntries.length - 1].points,
+    entries: newTopEntries,
+    updatedAt: firestore.FieldValue.serverTimestamp(),
+  });
 };

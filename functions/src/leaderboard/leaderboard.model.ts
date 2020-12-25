@@ -10,3 +10,10 @@ export interface LeaderboardEntry {
   achievementsCount: number;
   anonym?: boolean;
 }
+
+export interface LeaderboardTop {
+  totalCount: number;
+  lowestPoints: number;
+  entries: LeaderboardEntry[];
+  updatedAt: firestore.Timestamp | firestore.FieldValue;
+}

@@ -55,7 +55,7 @@ export const handleNewUser = fun()
         //the displayName will not be visible yet
         const userRecord = await admin.auth().getUser(user.uid);
         //by doing this the displayName will be available
-        user.displayName = userRecord.displayName || '';
+        user.displayName = userRecord.displayName;
       }
       await Promise.all([createUser(db, user), saveUserToElastic(user)]);
     } catch (error) {
@@ -317,7 +317,7 @@ export const onUserUpdate = fun()
     return handleUserConsistency(db, userAfter);
   });
 
-// export const populateAuthUsers = fun().https.onRequest(importUsersInAuth());
+// export const populateAuthUsers = fun().https.onRequest(importUsersInAuth);
 
 // export const findWrongWallets = fun().https.onRequest(async (req, res) => {
 //   const missingCommissions = await getWalletsWithMissingCommissions(db);

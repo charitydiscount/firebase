@@ -13,12 +13,15 @@ import { userToReviewer } from './mapper';
 import { getReferralEntry } from './repo';
 
 export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
-  db.collection(Collections.USERS).doc(user.uid).create({
-    email: user.email,
-    name: user.displayName,
-    photoUrl: user.photoURL,
-    userId: user.uid,
-  });
+  db
+    .collection(Collections.USERS)
+    .doc(user.uid)
+    .create({
+      email: user.email,
+      name: user.displayName || null,
+      photoUrl: user.photoURL,
+      userId: user.uid,
+    });
 
 export const createWallet = (db: firestore.Firestore, userId: string) =>
   db

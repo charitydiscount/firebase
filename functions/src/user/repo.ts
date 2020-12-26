@@ -7,19 +7,13 @@ export const getUser = async (
   db: firestore.Firestore,
   userId: string,
 ): Promise<User | undefined> => {
-  const userSnap = await db
-    .collection(Collections.USERS)
-    .doc(userId)
-    .get();
+  const userSnap = await db.collection(Collections.USERS).doc(userId).get();
 
   if (!userSnap.exists) {
     return undefined;
   }
 
-  const rolesSnap = await db
-    .collection(Collections.ROLES)
-    .doc(userId)
-    .get();
+  const rolesSnap = await db.collection(Collections.ROLES).doc(userId).get();
 
   const roles = rolesSnap.data() as Roles;
 
@@ -49,3 +43,19 @@ export const updateUser = (
       { ...user, updatedAt: firestore.FieldValue.serverTimestamp() },
       { merge: true },
     );
+
+export const getReferralEntry = async (
+  db: firestore.Firestore,
+  userId: string,
+) => {
+  const existingReferrals = await db
+    .collection(Collections.REFERRALS)
+    .where('userId', '==', userId)
+    .get();
+
+  if (existingReferrals.empty) {
+    return undefined;
+  }
+
+  return existingReferrals.docs[0];
+};

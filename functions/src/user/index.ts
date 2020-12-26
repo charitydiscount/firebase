@@ -10,6 +10,7 @@ import { User } from './user.model';
 import { getUserReviews } from '../rating/repo';
 import { getUserLeaderboardEntry } from '../leaderboard/repo';
 import { userToReviewer } from './mapper';
+import { getReferralEntry } from './repo';
 
 export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
   db.collection('users').doc(user.uid).create({
@@ -46,11 +47,11 @@ export const handleReferral = async (
   }
 
   // Ensure that the new user is not already referred
-  const existingReferrals = await db
-    .collection('referrals')
-    .where('userId', '==', referralRequest.newUserId)
-    .get();
-  if (!existingReferrals.empty) {
+  const existingReferral = await getReferralEntry(
+    db,
+    referralRequest.newUserId,
+  );
+  if (existingReferral) {
     console.log(`User ${referralRequest.newUserId} already referred`);
     return requestSnap.ref.update({ valid: false, reason: 'Already referred' });
   }
@@ -125,6 +126,12 @@ const getUserForReferral = (referralRequest: ReferralRequest) =>
 
 export const handleUserDelete = deleteUserData;
 
+/**
+ * Update the denormalized user data across all relevant collections:
+ * - reviews
+ * - leaderboard
+ * - referrals
+ */
 export const handleUserConsistency = async (
   db: firestore.Firestore,
   user: User,
@@ -146,6 +153,15 @@ export const handleUserConsistency = async (
   const entrySnap = await getUserLeaderboardEntry(db, user.userId);
   if (entrySnap.exists) {
     batch.update(entrySnap.ref, userToReviewer(user));
+  }
+
+  // Update in referrals
+  const referralEntry = await getReferralEntry(db, user.userId);
+  if (referralEntry) {
+    batch.update(referralEntry.ref, {
+      name: user.name,
+      photoUrl: user.photoUrl,
+    });
   }
 
   await batch.commit();

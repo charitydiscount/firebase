@@ -7,6 +7,7 @@ import { deleteUser as deleteUserFromElastic } from '../elastic';
 import { Collections } from '../collections';
 import { getUserReviews } from '../rating/repo';
 import { getUserLeaderboardEntry } from '../leaderboard/repo';
+import { getReferralEntry } from './repo';
 
 /**
  * - send email
@@ -14,6 +15,7 @@ import { getUserLeaderboardEntry } from '../leaderboard/repo';
  * - Anonymize info from referrals
  * - delete info from users
  * - delete info from storage
+ * - delete achievements and leaderboard entry
  */
 export const deleteUserData = async (
   db: firestore.Firestore,
@@ -35,12 +37,9 @@ export const deleteUserData = async (
   }
 
   // Anonymize invitation of the user (he/she was invited)
-  const ownReferrals = await db
-    .collection('referrals')
-    .where('userId', '==', user.uid)
-    .get();
-  for (const doc of ownReferrals.docs) {
-    await doc.ref.update({
+  const ownReferral = await getReferralEntry(db, user.uid);
+  if (ownReferral) {
+    await ownReferral.ref.update({
       name: '-',
       photoUrl: null,
     });

@@ -13,7 +13,15 @@ const firebaseAuth = (req: any, res: any, next: any) => {
       req.userId = decodedToken.uid;
       next();
     })
-    .catch(() => res.sendStatus(401));
+    .catch(() => {
+      if (process.env['FUNCTIONS_EMULATOR']) {
+        // TODO: Add user ID of the manually created user
+        req.userId = '';
+        return next();
+      } else {
+        return res.sendStatus(401);
+      }
+    });
 };
 
 const allowedOrigins = [

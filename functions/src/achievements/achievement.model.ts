@@ -18,7 +18,6 @@ export interface Achievement {
   reward: AchievementReward;
   order: number;
   type: AchievementType;
-  weight: number;
   targetDate?: Date;
   exactDate?: boolean;
 }

@@ -60,12 +60,11 @@ const createCase = async (req: Request, res: Response) =>
  *            and case document ID in params
  * @param res Express response
  */
-const updateCase = (req: Request, res: Response) => {
+const updateCase = async (req: Request, res: Response) => {
   const caseRef = _db.collection('cases').doc(req.params.caseId);
   const { funds, id, ...updatedCase } = req.body;
-  return caseRef
-    .set(updatedCase, { merge: true })
-    .then(() => res.sendStatus(200));
+  await caseRef.set(updatedCase, { merge: true });
+  return res.sendStatus(200);
 };
 
 /**
@@ -74,10 +73,7 @@ const updateCase = (req: Request, res: Response) => {
  * @param res Express response
  */
 const deleteCase = (req: Request, res: Response) =>
-  _db
-    .collection('cases')
-    .doc(req.params.caseId)
-    .delete();
+  _db.collection('cases').doc(req.params.caseId).delete();
 
 export default {
   getCases,

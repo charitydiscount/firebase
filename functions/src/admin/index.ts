@@ -13,6 +13,7 @@ import settingsController from './settings';
 import mailsController from './mails';
 import clicksController from './clicks';
 import achievementsController from './achievements';
+import usersController from './users';
 
 const app = express();
 
@@ -36,16 +37,16 @@ app.put('/programs/:programUniqueCode', programsController.updateProgram);
 // User commissions endpoints
 app.get('/commissions', commissionsController.getCommissions);
 app.get(
-    '/user/:userId/commissions',
-    commissionsController.getCommissionsOfUser,
+  '/user/:userId/commissions',
+  commissionsController.getCommissionsOfUser,
 );
 app.post(
-    '/user/:userId/commissions',
-    commissionsController.createUserCommission,
+  '/user/:userId/commissions',
+  commissionsController.createUserCommission,
 );
 app.put(
-    '/user/:userId/commissions/:commissionId',
-    commissionsController.updateUserCommission,
+  '/user/:userId/commissions/:commissionId',
+  commissionsController.updateUserCommission,
 );
 
 // Charity cases endpoints
@@ -84,6 +85,15 @@ app.put('/clicks/:clickId', clicksController.updateClick);
 //Achievements endpoints
 app.post('/achievements', achievementsController.createNewAchievement);
 app.get('/achievements', achievementsController.getAchievements);
-app.put('/achievements/:achievementId', achievementsController.updateAchievement);
+app.put(
+  '/achievements/:achievementId',
+  achievementsController.updateAchievement,
+);
+
+//Staff endpoints
+app.get('/users', usersController.retrieveAllStaffUsers);
+app.put('/users/staff/:userId', usersController.updateStaffMember);
+
+app.put('/users/update', usersController.updateUsersFromAuth);
 
 export default app;

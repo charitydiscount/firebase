@@ -7,6 +7,7 @@ import { publishMessage } from '../achievements/pubsub';
 import { AchievementType } from '../achievements/types';
 import { getUserDeviceTokens } from '../notifications/tokens';
 import { sendNotification } from '../notifications/fcm';
+import { Collections } from "../collections";
 
 /**
  * Update the cashback of the user based on the change in commissions
@@ -41,7 +42,7 @@ export const updateWallet = async (
     .map((commission) => commission.amount)
     .reduce((a1, a2) => a1 + a2, 0);
 
-  const userWalletRef = db.collection('points').doc(userId);
+  const userWalletRef = db.collection(Collections.WALLETS).doc(userId);
   let userWallet = await userWalletRef.get();
   if (!userWallet.exists) {
     console.log(`Wallet of user ${userId} doesn't exist. Initializing it`);
@@ -191,10 +192,12 @@ const saveTransactionsToWallet = (
         incommingAcceptedAmount,
       ),
       'transactions': firestore.FieldValue.arrayUnion(...newTransactions),
+      userId,
     });
   } else {
     return walletRef.update({
       'cashback.pending': totalPendingAmount,
+      userId,
     });
   }
 };

@@ -5,18 +5,27 @@ import moment = require('moment');
 import { deleteUserData } from './delete';
 import { publishMessage } from '../achievements/pubsub';
 import { AchievementType } from '../achievements/types';
+import { Collections } from '../collections';
+import { User } from './user.model';
+import { getUserReviews } from '../rating/repo';
+import { getUserLeaderboardEntry } from '../leaderboard/repo';
+import { userToReviewer } from './mapper';
+import { getReferralEntry } from './repo';
 
 export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
-  db.collection('users').doc(user.uid).create({
-    email: user.email,
-    name: user.displayName,
-    photoUrl: user.photoURL,
-    userId: user.uid,
-  });
+  db
+    .collection(Collections.USERS)
+    .doc(user.uid)
+    .create({
+      email: user.email,
+      name: user.displayName || null,
+      photoUrl: user.photoURL,
+      userId: user.uid,
+    });
 
 export const createWallet = (db: firestore.Firestore, userId: string) =>
   db
-    .collection('points')
+    .collection(Collections.WALLETS)
     .doc(userId)
     .create({
       cashback: {
@@ -27,6 +36,7 @@ export const createWallet = (db: firestore.Firestore, userId: string) =>
         approved: 0.0,
         pending: 0.0,
       },
+      userId,
     });
 
 export const handleReferral = async (
@@ -40,11 +50,11 @@ export const handleReferral = async (
   }
 
   // Ensure that the new user is not already referred
-  const existingReferrals = await db
-    .collection('referrals')
-    .where('userId', '==', referralRequest.newUserId)
-    .get();
-  if (!existingReferrals.empty) {
+  const existingReferral = await getReferralEntry(
+    db,
+    referralRequest.newUserId,
+  );
+  if (existingReferral) {
     console.log(`User ${referralRequest.newUserId} already referred`);
     return requestSnap.ref.update({ valid: false, reason: 'Already referred' });
   }
@@ -118,3 +128,44 @@ const getUserForReferral = (referralRequest: ReferralRequest) =>
   auth().getUser(referralRequest.referralCode);
 
 export const handleUserDelete = deleteUserData;
+
+/**
+ * Update the denormalized user data across all relevant collections:
+ * - reviews
+ * - leaderboard
+ * - referrals
+ */
+export const handleUserConsistency = async (
+  db: firestore.Firestore,
+  user: User,
+) => {
+  // Update in reviews
+  const batch = db.batch();
+
+  const reviewsSnap = await getUserReviews(db, user.userId);
+  if (!reviewsSnap.empty) {
+    const reviewer = userToReviewer(user);
+    for (const reviewSnap of reviewsSnap.docs) {
+      batch.update(reviewSnap.ref, {
+        [`reviews.${user.userId}.reviewer`]: reviewer,
+      });
+    }
+  }
+
+  // Update in leaderboard
+  const entrySnap = await getUserLeaderboardEntry(db, user.userId);
+  if (entrySnap.exists) {
+    batch.update(entrySnap.ref, userToReviewer(user));
+  }
+
+  // Update in referrals
+  const referralEntry = await getReferralEntry(db, user.userId);
+  if (referralEntry) {
+    batch.update(referralEntry.ref, {
+      name: user.name,
+      photoUrl: user.photoUrl,
+    });
+  }
+
+  await batch.commit();
+};

@@ -103,10 +103,13 @@ function buildBulkBodyForTx(transactions: UserTransaction[]) {
 
 export function buildBulkBodyForPrograms(programs: Program[]) {
   return flatMap(
-    (program: Program) => [
-      { index: { _index: indeces.PROGRAMS_INDEX, _id: program.id } },
-      program,
-    ],
+    (program: Program) =>
+      program.status === 'removed'
+        ? [{ delete: { _index: indeces.PROGRAMS_INDEX, _id: program.id } }]
+        : [
+            { index: { _index: indeces.PROGRAMS_INDEX, _id: program.id } },
+            program,
+          ],
     programs,
   );
 }

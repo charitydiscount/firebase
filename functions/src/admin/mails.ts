@@ -1,8 +1,8 @@
 import { checkObjectWithProperties, CheckResult } from '../checks';
 import { Request, Response } from 'express';
 import * as admin from 'firebase-admin';
-import { User } from '../entities';
 import { sendEmail } from '../email';
+import { User } from '../user/user.model';
 
 const _db = admin.firestore();
 
@@ -28,11 +28,15 @@ const sendMailNotification = async (req: Request, res: Response) => {
     const user = doc.data() as User;
     if (!user.disableMailNotification) {
       counter++;
-      sendEmail(user.email, req.body.subject, req.body.content.replace("/unsubscribe", "/unsubscribe/" + user.userId))
-          .then()
-          .catch((error) => {
-            console.log(error);
-          });
+      sendEmail(
+        user.email,
+        req.body.subject,
+        req.body.content.replace('/unsubscribe', '/unsubscribe/' + user.userId),
+      )
+        .then()
+        .catch((error) => {
+          console.log(error);
+        });
     }
   });
 

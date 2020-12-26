@@ -1,10 +1,11 @@
 import { firestore } from 'firebase-admin';
-import { FirestoreCollections } from '../collections';
-import { Currencies } from '../entities/currencies';
+import { Collections } from '../collections';
+import { Currency } from '../entities/currencies';
 import { NotificationTypes, sendNotification } from '../notifications/fcm';
 import { getUserDeviceTokens } from '../notifications/tokens';
 import { TxStatus, TxType, UserTransaction } from '../tx/types';
 import { Achievement, AchievementRewardRequest } from './achievement.model';
+import { createWallet } from "../user";
 
 export const handleRewardRequest = async (
   db: firestore.Firestore,
@@ -13,7 +14,7 @@ export const handleRewardRequest = async (
   const request = requestSnap.data() as AchievementRewardRequest;
 
   const achievementSnap = await db
-    .collection(FirestoreCollections.ACHIEVEMENTS)
+    .collection(Collections.ACHIEVEMENTS)
     .doc(request.achievement.id)
     .get();
 
@@ -38,25 +39,28 @@ export const handleRewardRequest = async (
   );
 
   switch (reward.unit) {
-    case Currencies.CHARITY_POINTS:
+    case Currency.CHARITY_POINTS:
       const userTxBonus: UserTransaction = {
         amount: reward.amount,
-        currency: Currencies.CHARITY_POINTS,
+        currency: Currency.CHARITY_POINTS,
         date: request.createdAt,
         type: TxType.BONUS,
         sourceTxId: requestSnap.id,
         target: { id: request.userId, name: '' },
         userId: request.userId,
       };
-      await db
-        .collection(FirestoreCollections.WALLETS)
-        .doc(request.userId)
-        .set(
+      const userWalletRef = db.collection(Collections.WALLETS).doc(request.userId);
+      let userWallet = await userWalletRef.get();
+      if (!userWallet.exists) {
+        console.log(`Wallet of user ${request.userId} doesn't exist. Initializing it`);
+        await createWallet(db, request.userId);
+      }
+      await userWalletRef
+        .update(
           {
             'points.approved': firestore.FieldValue.increment(reward.amount),
             'transactions': firestore.FieldValue.arrayUnion(userTxBonus),
-          },
-          { merge: true },
+          }
         );
       break;
     default:

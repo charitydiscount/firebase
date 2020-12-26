@@ -4,6 +4,10 @@ import { isDev } from '../util';
 import { sendEmail } from '../email';
 import { deleteAccountMailBody } from '../email/content';
 import { deleteUser as deleteUserFromElastic } from '../elastic';
+import { Collections } from '../collections';
+import { getUserReviews } from '../rating/repo';
+import { getUserLeaderboardEntry } from '../leaderboard/repo';
+import { getReferralEntry } from './repo';
 
 /**
  * - send email
@@ -11,6 +15,7 @@ import { deleteUser as deleteUserFromElastic } from '../elastic';
  * - Anonymize info from referrals
  * - delete info from users
  * - delete info from storage
+ * - delete achievements and leaderboard entry
  */
 export const deleteUserData = async (
   db: firestore.Firestore,
@@ -32,22 +37,16 @@ export const deleteUserData = async (
   }
 
   // Anonymize invitation of the user (he/she was invited)
-  const ownReferrals = await db
-    .collection('referrals')
-    .where('userId', '==', user.uid)
-    .get();
-  for (const doc of ownReferrals.docs) {
-    await doc.ref.update({
+  const ownReferral = await getReferralEntry(db, user.uid);
+  if (ownReferral) {
+    await ownReferral.ref.update({
       name: '-',
       photoUrl: null,
     });
   }
 
   // Anonymize user's reviews
-  const shopReviews = await db
-    .collection('reviews')
-    .where(`reviews.${user.uid}`, '>', '')
-    .get();
+  const shopReviews = await getUserReviews(db, user.uid);
   for (const doc of shopReviews.docs) {
     await doc.ref.update({
       [`reviews.${user.uid}.reviewer.name`]: '-',
@@ -66,6 +65,21 @@ export const deleteUserData = async (
   const accountDocs = await userRef.collection('accounts').listDocuments();
   for (const doc of accountDocs) {
     await doc.delete();
+  }
+
+  // Delete user from leaderboard if exists
+  const leaderboardRef = await getUserLeaderboardEntry(db, user.uid);
+  if (leaderboardRef.exists) {
+    await leaderboardRef.ref.delete();
+  }
+
+  // Delete user achievements
+  const achievementsRef = await db
+    .collection(Collections.USER_ACHIEVEMENTS)
+    .doc(user.uid)
+    .get();
+  if (achievementsRef.exists) {
+    await achievementsRef.ref.delete();
   }
 
   // Delete user document

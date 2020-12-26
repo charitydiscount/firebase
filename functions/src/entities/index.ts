@@ -40,6 +40,7 @@ export const commissionKeys = [
 export interface Program {
   id: number;
   name: string;
+  description?: string;
   mainUrl: string;
   affiliateUrl: string;
   uniqueCode: string;
@@ -112,29 +113,6 @@ export interface Promotion {
   program: PromotionProgram;
 }
 
-export interface Reviewer {
-  userId: string;
-  name: string;
-  photoUrl: string;
-}
-
-export interface Review {
-  reviewer: Reviewer;
-  rating: number;
-  description: string;
-  createdAt: firestore.Timestamp;
-}
-
-export interface ProgramReviews {
-  shopUniqueCode: string;
-  reviews: { [userId: string]: Review };
-}
-
-export interface ProgramOverallRating {
-  rating: number;
-  count: number;
-}
-
 export interface CaseImage {
   url: string;
 }
@@ -148,10 +126,8 @@ export interface CharityCase {
   funds?: number;
 }
 
-export interface User {
-  userId: string;
-  email: string;
-  disableMailNotification: boolean;
+export interface Roles {
+  admin: boolean;
 }
 
 export interface UserAccount {

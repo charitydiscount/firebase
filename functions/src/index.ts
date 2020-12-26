@@ -55,7 +55,7 @@ export const handleNewUser = fun()
         //the displayName will not be visible yet
         const userRecord = await admin.auth().getUser(user.uid);
         //by doing this the displayName will be available
-        user.displayName = userRecord.displayName;
+        user.displayName = userRecord.displayName || '';
       }
       await Promise.all([createUser(db, user), saveUserToElastic(user)]);
     } catch (error) {

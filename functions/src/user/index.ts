@@ -13,7 +13,7 @@ import { userToReviewer } from './mapper';
 import { getReferralEntry } from './repo';
 
 export const createUser = (db: firestore.Firestore, user: auth.UserRecord) =>
-  db.collection('users').doc(user.uid).create({
+  db.collection(Collections.USERS).doc(user.uid).create({
     email: user.email,
     name: user.displayName,
     photoUrl: user.photoURL,

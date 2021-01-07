@@ -28,8 +28,8 @@ export const updateLeaderboard = async (
   const entry: LeaderboardEntry = {
     achievementsCount: achievements.length,
     isStaff: user.isStaff,
-    name: `${user.name}`,
-    photoUrl: user.photoUrl,
+    name: user.privateName ? 'Anonim' : `${user.name}`,
+    photoUrl: user.privatePhoto ? '' : user.photoUrl,
     points: points,
     updatedAt: firestore.FieldValue.serverTimestamp(),
     userId,

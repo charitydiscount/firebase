@@ -1,5 +1,3 @@
-import { firestore } from 'firebase-admin';
-
 export interface Reviewer {
   userId: string;
   name: string;
@@ -12,7 +10,7 @@ export interface Review {
   reviewer: Reviewer;
   rating: number;
   description: string;
-  createdAt: firestore.Timestamp;
+  createdAt: FirebaseFirestore.Timestamp;
 }
 
 export interface ProgramReviews {

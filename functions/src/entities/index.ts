@@ -1,13 +1,11 @@
-import { firestore } from 'firebase-admin';
-
 export interface Commission {
   originalAmount: number;
   saleAmount: number;
   originalCurrency: string;
   amount: number;
   currency: string;
-  createdAt: firestore.Timestamp;
-  updatedAt: firestore.Timestamp | firestore.FieldValue;
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue;
   shopId: number | null;
   status: string;
   originId: number;
@@ -65,7 +63,7 @@ interface ProgramSnapProperty {
 }
 
 export type ProgramSnapshot = ProgramSnapProperty & {
-  updatedAt: firestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
 };
 
 export enum DefaultSaleCommissionType {
@@ -141,13 +139,13 @@ export interface Referral {
   userId: string;
   name: string;
   photoUrl: string;
-  createdAt: firestore.FieldValue | firestore.Timestamp;
+  createdAt: FirebaseFirestore.FieldValue | FirebaseFirestore.Timestamp;
 }
 
 export interface ReferralRequest {
   newUserId: string;
   referralCode: string;
-  createdAt: firestore.Timestamp;
+  createdAt: FirebaseFirestore.Timestamp;
   valid: boolean | undefined;
   reason: string | undefined;
 }
@@ -164,11 +162,15 @@ export interface MetaGeneral {
 
 export interface MetaTwoPerformant {
   uniqueCode: string;
-  commissionsTwoPSince: firestore.Timestamp | undefined;
+  commissionsTwoPSince: FirebaseFirestore.Timestamp | undefined;
 }
 
 export interface CommissionEntry {
   [commissionId: number]: Commission;
+}
+
+export interface CommissionsMap {
+  [userId: string]: CommissionEntry;
 }
 
 export type UserCommissions = {
@@ -206,7 +208,7 @@ export interface Click {
   ipv6Address: string;
   userId: string;
   programId: string;
-  createdAt: firestore.Timestamp;
+  createdAt: FirebaseFirestore.Timestamp;
   deviceType?: string;
 }
 

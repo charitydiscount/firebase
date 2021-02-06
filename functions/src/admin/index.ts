@@ -2,7 +2,7 @@ import express = require('express');
 import bearerToken = require('express-bearer-token');
 import helmet = require('helmet');
 import middlewares from '../middlwares';
-import bodyParser = require('body-parser');
+import { json } from 'body-parser';
 import programsController from './programs';
 import commissionsController from './commissions';
 import casesController from './cases';
@@ -26,7 +26,7 @@ app.use(bearerToken());
 app.use(middlewares.firebaseAuth);
 app.use(middlewares.adminMw);
 
-app.use(bodyParser.json());
+app.use(json());
 
 // Program enpoints
 app.get('/programs', programsController.getPrograms);

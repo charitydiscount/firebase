@@ -3,11 +3,6 @@ import fetch = require('node-fetch');
 import camelcaseKeys = require('camelcase-keys');
 import { Promotion, Source } from '../entities';
 import {
-  CommissionsResponse,
-  commissionsFromJson,
-  Commission,
-} from '../commissions/serializer';
-import {
   sleep,
   USER_LINK_PLACEHOLDER,
   PROGRAM_LINK_PLACEHOLDER,
@@ -18,9 +13,7 @@ import {
   Program,
   ProgramsResponse,
   PromotionsResponse,
-  Pagination,
 } from './serializers';
-import moment = require('moment');
 
 interface AuthHeaders {
   accessToken: string;
@@ -116,8 +109,8 @@ export async function getCommissions2P(since?: Date): Promise<Commission[]> {
       params: '&sort[date]=desc',
       stopWhen: (comResponse) =>
         (since &&
-          comResponse.commissions.find((comm) =>
-            moment(comm.createdAt).isBefore(moment(since)),
+          comResponse.commissions.find(
+            (comm) => Date.parse(comm.createdAt) < since.valueOf(),
           ) !== null) ||
         false,
     },
@@ -302,4 +295,106 @@ export default {
   getCommissions: getCommissions2P,
   getPrograms,
   getAffiliateCodes,
+};
+
+export interface CommissionsResponse {
+  commissions: Commission[];
+  metadata: Metadata;
+}
+
+export interface Commission {
+  id: number;
+  userId: number;
+  actionid: number;
+  amount: string;
+  status: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  reason: null | string[];
+  statsTags: string | null;
+  history: null;
+  currency: string;
+  workingCurrencyCode: string;
+  programId: number;
+  registeredInBudgetLock: boolean;
+  amountInWorkingCurrency: string;
+  actiontype: string;
+  program: CommissionProgram;
+  publicActionData: PublicActionData;
+  publicClickData: PublicClickData;
+  source: string;
+}
+
+export interface CommissionProgram {
+  name: string;
+  slug: string;
+  paymentType: string;
+  status: string;
+  userLogin: string;
+  logo: string;
+}
+
+export interface PublicActionData {
+  createdAt: string;
+  updatedAt: string;
+  rate: null;
+  amount: string | null;
+  adType: string;
+  adId: string;
+  sourceIp: string;
+  description: string;
+}
+
+export interface PublicClickData {
+  createdAt: string;
+  sourceIp: string;
+  url: string;
+  redirectTo: string;
+  statsTags: string | null;
+  deviceType: string;
+}
+
+export interface Metadata {
+  totals: Totals;
+  pagination: Pagination;
+  programs: ProgramElement[];
+  facets: Facets;
+}
+
+export interface Facets {
+  search: Available;
+  available: Available;
+}
+
+export interface Available {
+  status: RegistrationMonth[];
+  registrationMonth: RegistrationMonth[];
+}
+
+export interface RegistrationMonth {
+  value: string;
+  count: number;
+}
+
+export interface Pagination {
+  results: number;
+  pages: number;
+  currentPage: number;
+}
+
+export interface ProgramElement {
+  name: string;
+  id: number;
+}
+
+export interface Totals {
+  amount: string;
+  transactionAmount: null;
+  results: number;
+}
+
+const commissionsFromJson = (json: any): CommissionsResponse => {
+  //@ts-ignore
+  return camelcaseKeys(json, { deep: true });
 };

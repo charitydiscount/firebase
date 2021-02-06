@@ -1,11 +1,23 @@
 import puppeteer = require('puppeteer-core');
 import { config } from 'firebase-functions';
 import moment = require('moment');
-import { Commission, UserCommissions, Source } from '../entities';
+import {
+  Commission,
+  UserCommissions,
+  Source,
+  CommissionsMap,
+} from '../../entities';
 import { firestore } from 'firebase-admin';
-import { roundAmount } from '../exchange';
+import { roundAmount } from '../../exchange';
 import { chunk } from 'lodash';
 import chromium = require('chrome-aws-lambda');
+import { CommissionRetriever } from '.';
+
+export class AltexRetriever implements CommissionRetriever {
+  getCommissions(userPercent: number): Promise<CommissionsMap> {
+    return getAltexCommissions(userPercent);
+  }
+}
 
 interface AltexConfig {
   site: string;
@@ -16,7 +28,7 @@ interface AltexConfig {
   id: string;
 }
 
-export const getAltexCommissions = async (userPercentage: number) => {
+const getAltexCommissions = async (userPercentage: number) => {
   const altexConfig: AltexConfig = config().altex;
   if (!altexConfig) {
     console.log('Altex env variables missing');
@@ -133,7 +145,7 @@ const chunkCommissions = (
   return commissions;
 };
 
-export const getAltexCommissionStatus = (rawStatus: any) => {
+const getAltexCommissionStatus = (rawStatus: any) => {
   let commissionStatus = 'pending';
   switch (rawStatus) {
     case 'In asteptare':

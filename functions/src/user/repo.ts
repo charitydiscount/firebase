@@ -20,6 +20,10 @@ export const getUser = async (
     rolesSnap.data() as Roles,
   );
 
+  if (!user.userId) {
+    user.userId = userSnap.id;
+  }
+
   if (!user.name || !user.photoUrl) {
     const authUser = await auth().getUser(user.userId);
     if (!user.name) {

@@ -77,13 +77,17 @@ export const updateUsersFromAuth = async (req: Request, res: Response) => {
       continue;
     }
     const userDoc = await getUser(admin.firestore(), user.uid);
-    if (!userDoc || !userDoc.name || !userDoc.photoUrl) {
+    if (
+      !userDoc ||
+      (!userDoc.name && user.displayName) ||
+      (!userDoc.photoUrl && user.photoURL)
+    ) {
       promises.push(
         updateUser(
           admin.firestore(),
           {
-            name: userDoc?.name || user.displayName || null,
-            photoUrl: userDoc?.photoUrl || user.photoURL || null,
+            name: userDoc?.name || user.displayName || '-',
+            photoUrl: userDoc?.photoUrl || user.photoURL || '',
             userId: user.uid,
             email: user.email || null,
           },

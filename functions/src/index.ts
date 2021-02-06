@@ -204,9 +204,6 @@ const commissionsInterval =
     : '10 minutes';
 
 export const updateCommissionsFromApi = fun()
-  .runWith({
-    memory: '512MB',
-  })
   .pubsub.schedule(`every ${commissionsInterval}`)
   .timeZone('Europe/Bucharest')
   .onRun((_: any) => {

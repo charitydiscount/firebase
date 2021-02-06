@@ -1,13 +1,17 @@
 import puppeteer = require('puppeteer-core');
 import { config } from 'firebase-functions';
 import moment = require('moment');
-import { Commission, UserCommissions, Source } from '../../entities';
+import {
+  Commission,
+  UserCommissions,
+  Source,
+  CommissionsMap,
+} from '../../entities';
 import { firestore } from 'firebase-admin';
 import { roundAmount } from '../../exchange';
 import { chunk } from 'lodash';
 import chromium = require('chrome-aws-lambda');
 import { CommissionRetriever } from '.';
-import { CommissionsMap } from '../../entities';
 
 export class AltexRetriever implements CommissionRetriever {
   getCommissions(userPercent: number): Promise<CommissionsMap> {

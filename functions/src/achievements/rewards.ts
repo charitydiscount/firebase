@@ -50,7 +50,7 @@ export const handleRewardRequest = async (
         userId: request.userId,
       };
       const userWalletRef = db.collection(Collections.WALLETS).doc(request.userId);
-      let userWallet = await userWalletRef.get();
+      const userWallet = await userWalletRef.get();
       if (!userWallet.exists) {
         console.log(`Wallet of user ${request.userId} doesn't exist. Initializing it`);
         await createWallet(db, request.userId);

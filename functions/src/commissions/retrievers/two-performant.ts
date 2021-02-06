@@ -3,7 +3,6 @@ import { Commission, getCommissions2P } from '../../two-performant';
 import { asyncForEach } from '../../util';
 import * as entity from '../../entities';
 import { CommissionRetriever } from '.';
-import { firestore } from 'firebase-admin';
 import { convertAmount, BASE_CURRENCY, roundAmount } from '../../exchange';
 
 export class TwoPerformantRetriever implements CommissionRetriever {
@@ -121,8 +120,12 @@ export class TwoPerformantRetriever implements CommissionRetriever {
       status: comm.status,
       originId: comm.id,
       program: comm.program,
-      createdAt: firestore.Timestamp.fromMillis(Date.parse(comm.createdAt)),
-      updatedAt: firestore.Timestamp.fromMillis(Date.parse(comm.updatedAt)),
+      createdAt: admin.firestore.Timestamp.fromMillis(
+        Date.parse(comm.createdAt),
+      ),
+      updatedAt: admin.firestore.Timestamp.fromMillis(
+        Date.parse(comm.updatedAt),
+      ),
       source: comm.source,
     };
     if (comm.reason && Array.isArray(comm.reason)) {

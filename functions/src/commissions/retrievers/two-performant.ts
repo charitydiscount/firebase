@@ -78,16 +78,20 @@ export class TwoPerformantRetriever implements CommissionRetriever {
     commissions2p: Commission[],
     meta: FirebaseFirestore.DocumentSnapshot<FirebaseFirestore.DocumentData>,
   ) {
-    const oldestPendingComm = commissions2p
-      .reverse()
-      .find((c2p) => c2p.status === 'pending' || c2p.status === 'accepted');
-    if (oldestPendingComm) {
-      await meta.ref.update(<entity.MetaTwoPerformant>{
-        commissionsTwoPSince: admin.firestore.Timestamp.fromMillis(
-          Date.parse(oldestPendingComm.createdAt),
-        ),
-      });
+    const pendingCommissions = commissions2p
+      .filter((c2) => c2.status === 'pending' || c2.status === 'accepted')
+      .sort((c1, c2) => Date.parse(c1.createdAt) - Date.parse(c2.createdAt));
+
+    if (!pendingCommissions) {
+      return;
     }
+
+    const oldestPendingComm = pendingCommissions[0];
+    await meta.ref.update(<entity.MetaTwoPerformant>{
+      commissionsTwoPSince: admin.firestore.Timestamp.fromMillis(
+        Date.parse(oldestPendingComm.createdAt),
+      ),
+    });
   }
 
   private async toCommissionEntity(

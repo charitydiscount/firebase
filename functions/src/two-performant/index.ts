@@ -14,7 +14,6 @@ import {
   ProgramsResponse,
   PromotionsResponse,
 } from './serializers';
-import moment = require('moment');
 
 interface AuthHeaders {
   accessToken: string;
@@ -110,8 +109,8 @@ export async function getCommissions2P(since?: Date): Promise<Commission[]> {
       params: '&sort[date]=desc',
       stopWhen: (comResponse) =>
         (since &&
-          comResponse.commissions.find((comm) =>
-            moment(comm.createdAt).isBefore(moment(since)),
+          comResponse.commissions.find(
+            (comm) => Date.parse(comm.createdAt) < since.valueOf(),
           ) !== null) ||
         false,
     },

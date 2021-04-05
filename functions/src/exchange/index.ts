@@ -57,7 +57,7 @@ const getRate = async (currency: string): Promise<number | undefined> => {
   const xml = await bnrResponse.text();
   const parsedXML = await parseStringPromise(xml);
   const rates = parsedXML.DataSet.Body[0].Cube[0].Rate as any[];
-  const rate = rates.find((rate: any) => rate['$'].currency === currency);
+  const rate = rates.find((r: any) => r['$'].currency === currency);
 
   return rate ? rate['_'] : undefined;
 };

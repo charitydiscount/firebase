@@ -9,6 +9,9 @@ export interface ConvertedAmount {
   currency: string;
 }
 
+let exchangeRates: any[];
+let cacheDate: number;
+
 export async function convertAmount(
   amount: number,
   currency: string,
@@ -47,16 +50,22 @@ export async function convertAmount(
 }
 
 const getRate = async (currency: string): Promise<number | undefined> => {
-  const bnrResponse = await fetch.default('https://www.bnr.ro/nbrfxrates.xml');
-  if (bnrResponse.status !== 200) {
-    console.error(`Failed to fetch the BNR rates: ${bnrResponse.statusText}`);
-    return;
+  if (!exchangeRates || cacheDate < Date.now() - 3600000) {
+    const bnrResponse = await fetch.default(
+      'https://www.bnr.ro/nbrfxrates.xml',
+    );
+    if (bnrResponse.status !== 200) {
+      console.error(`Failed to fetch the BNR rates: ${bnrResponse.statusText}`);
+      return;
+    }
+
+    const xml = await bnrResponse.text();
+    const parsedXML = await parseStringPromise(xml);
+    exchangeRates = parsedXML.DataSet.Body[0].Cube[0].Rate as any[];
+    cacheDate = Date.now();
   }
 
-  const xml = await bnrResponse.text();
-  const parsedXML = await parseStringPromise(xml);
-  const rates = parsedXML.DataSet.Body[0].Cube[0].Rate as any[];
-  const rate = rates.find(
+  const rate = exchangeRates.find(
     (r: any) => r['$'].currency === currency.toUpperCase(),
   );
 

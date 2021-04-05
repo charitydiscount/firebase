@@ -110,6 +110,15 @@ export class TwoPerformantRetriever implements CommissionRetriever {
       convertedUserAmount = conversionResult.amount;
       currency = conversionResult.currency;
     }
+
+    if (isNaN(convertedUserAmount)) {
+      throw new Error(
+        `Could not convert the user amount for commission: ${JSON.stringify(
+          comm,
+        )}`,
+      );
+    }
+
     const commission: entity.Commission = {
       originalAmount: roundAmount(
         Number.parseFloat(comm.amountInWorkingCurrency),

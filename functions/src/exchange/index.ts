@@ -27,11 +27,10 @@ export async function convertAmount(
   }
 
   const fee = config().exchange.fee || 0.02;
-
-  const rate = officialRate + officialRate * fee;
+  const rate = officialRate - officialRate * fee;
 
   try {
-    targetAmount = amount / rate;
+    targetAmount = amount * rate;
   } catch (error) {
     console.log(`Currency conversion failed: ${error}`);
     // Return the provided amount and use it as it is
@@ -57,9 +56,11 @@ const getRate = async (currency: string): Promise<number | undefined> => {
   const xml = await bnrResponse.text();
   const parsedXML = await parseStringPromise(xml);
   const rates = parsedXML.DataSet.Body[0].Cube[0].Rate as any[];
-  const rate = rates.find((r: any) => r['$'].currency === currency);
+  const rate = rates.find(
+    (r: any) => r['$'].currency === currency.toUpperCase(),
+  );
 
-  return rate ? rate['_'] : undefined;
+  return rate ? parseFloat(rate['_']) : undefined;
 };
 
 export const roundAmount = (amount: number) => {

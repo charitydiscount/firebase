@@ -1,6 +1,7 @@
 {
   "projects": {
     "default": "charitydiscount",
-    "dev": "charitydiscount-test"
+    "dev": "charitydiscount-test",
+    "local": "demo-charitydiscount"
   }
 }
